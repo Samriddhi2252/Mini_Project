@@ -315,14 +315,20 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
       preferCanvas: true,
     });
 
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20,
-      attribution: '',
-    }).addTo(map);
-
     // Detect current theme — pick palette accordingly
     const isLight = theme === 'light';
     const P = isLight ? LIGHT : DARK;
+
+    const stadiaApiKey = import.meta.env.VITE_STADIA_API_KEY as string | undefined;
+    const tileUrl = stadiaApiKey
+      ? `https://tiles.stadiamaps.com/tiles/${isLight ? 'alidade_smooth' : 'alidade_smooth_dark'}/{z}/{x}/{y}{r}.png?api_key=${encodeURIComponent(stadiaApiKey)}`
+      : `https://{s}.basemaps.cartocdn.com/${isLight ? 'light_all' : 'dark_all'}/{z}/{x}/{y}{r}.png`;
+
+    L.tileLayer(tileUrl, {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution: '',
+    }).addTo(map);
 
     // Custom z-ordered panes
     const hazardPane = map.createPane('hazard'); hazardPane.style.zIndex = '200';
