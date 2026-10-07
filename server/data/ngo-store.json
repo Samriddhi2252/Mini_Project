@@ -27,5 +27,29 @@
   ],
   "volunteers": [],
   "tasks": [],
-  "version": 3
+  "version": 6,
+  "publicVolunteers": [
+    {
+      "id": "vol-1791393149421-lpegr0",
+      "fullName": "Test Volunteer",
+      "gender": "male",
+      "phone": "+91 9876543210",
+      "email": "test.volunteer@example.com",
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "locationPermission": true,
+      "registeredAt": 1791393149421
+    },
+    {
+      "id": "vol-1791393217310-7qpvlh",
+      "fullName": "Samriddhi Jaiswal",
+      "gender": "female",
+      "phone": "6564654154",
+      "email": "samriddhijaiswal2205@gmail.com",
+      "latitude": 28.611616411602927,
+      "longitude": 77.3589332033993,
+      "locationPermission": true,
+      "registeredAt": 1791393217310
+    }
+  ]
 }

@@ -1,6 +1,60 @@
 {
   "requests": [
     {
+      "id": "triage-1791394649397",
+      "category": "rescue",
+      "priority": "critical",
+      "status": "active",
+      "title": "SOS: Trapped Emergency",
+      "details": "Hum 4 log Yamuna ke paas phas gaye hain, ek elderly person hain aur pani ghar ke first floor tak aa gaya hai.",
+      "items": [
+        "Evacuation",
+        "Rescue Boat",
+        "Emergency Shelter",
+        "Medical Assistance"
+      ],
+      "contactName": "AI Triage Request",
+      "contactPhone": "",
+      "distanceMiles": 0.1,
+      "createdAt": 1791394649397,
+      "coords": {
+        "y": 28.6139,
+        "x": 77.209
+      },
+      "peopleCount": 4,
+      "isUserCreated": true,
+      "region": "ncr",
+      "triage": {
+        "priority": "CRITICAL",
+        "incidentType": "Trapped",
+        "people": 4,
+        "vulnerable": {
+          "elderly": 1,
+          "children": 0,
+          "pregnant": 0,
+          "disabled": 0,
+          "injured": 0
+        },
+        "dangerIndicators": [
+          "Water level rising — first floor"
+        ],
+        "priorityReasons": [
+          "4 people affected",
+          "1 elderly person(s) present",
+          "Person(s) trapped — immediate evacuation required",
+          "Flood water at dangerous level"
+        ],
+        "requiredResources": [
+          "Evacuation",
+          "Rescue Boat",
+          "Emergency Shelter",
+          "Medical Assistance"
+        ],
+        "rawMessage": "Hum 4 log Yamuna ke paas phas gaye hain, ek elderly person hain aur pani ghar ke first floor tak aa gaya hai.",
+        "parsedBy": "fallback"
+      }
+    },
+    {
       "id": "triage-1787343136767",
       "category": "rescue",
       "priority": "critical",
@@ -199,5 +253,5 @@
     "sync-test-auto-1787083766314"
   ],
   "helpingIds": [],
-  "version": 7
+  "version": 8
 }

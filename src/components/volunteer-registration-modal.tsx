@@ -33,6 +33,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useModalBack } from '@/hooks/use-modal-back';
 import { useVolunteers } from '@/hooks/use-volunteers';
+import { toast } from 'sonner';
+import { saveVolunteerProfile } from '@/lib/volunteer-profile';
 import type { VolunteerGender } from '@/types';
 
 /**
@@ -165,8 +167,24 @@ export function VolunteerRegistrationModal({ open, onOpenChange, onComplete }: V
         longitude: locationPermission && coords ? coords.lng : null,
         locationPermission,
       });
+      toast.success('Registered as Volunteer!', {
+        description: 'Your details have been saved successfully.',
+      });
     } catch (cause) {
-      setSubmitError(cause instanceof Error ? cause.message : 'Registration failed. Please try again.');
+      console.warn('[VolunteerModal] Remote registration failed, falling back to local store:', cause);
+      saveVolunteerProfile({
+        fullName: fullName.trim(),
+        gender: gender as VolunteerGender,
+        phone: phone.trim(),
+        email: email.trim().toLowerCase(),
+        latitude: locationPermission && coords ? coords.lat : null,
+        longitude: locationPermission && coords ? coords.lng : null,
+        locationPermission,
+        registeredAt: Date.now(),
+      });
+      toast.success('Registered as Volunteer (Offline Mode)', {
+        description: 'Your volunteer details have been saved to local storage.',
+      });
     }
   };
 

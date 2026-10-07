@@ -72,6 +72,7 @@ export function OfferHelpPanel({ open, onOpenChange, offers, loading, error, onC
   const [location, setLocation] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState('');
+  const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [voiceField, setVoiceField] = useState<string | null>(null);
@@ -92,7 +93,7 @@ export function OfferHelpPanel({ open, onOpenChange, offers, loading, error, onC
   };
 
   const canSubmit = useMemo(
-    () => title.trim() && details.trim() && quantity.trim() && contactName.trim() && contactPhone.trim() && location.trim(),
+    () => Boolean(title.trim() && details.trim() && quantity.trim() && contactName.trim() && contactPhone.trim() && location.trim()),
     [title, details, quantity, contactName, contactPhone, location]
   );
 
@@ -105,13 +106,21 @@ export function OfferHelpPanel({ open, onOpenChange, offers, loading, error, onC
     setLocation('');
     setPhoto(null);
     setPhotoError('');
+    setFormError('');
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const handlePhoto = (file: File | undefined) => {
-    if (!file) return;
+  const handlePhoto = (file: File | undefined | null) => {
+    if (!file) {
+      setPhoto(null);
+      setPhotoError('');
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
       setPhotoError('Use a JPG, PNG, or WebP image under 5 MB.');
+      setPhoto(null);
+      if (fileRef.current) fileRef.current.value = '';
       return;
     }
     setPhotoError('');
@@ -122,6 +131,8 @@ export function OfferHelpPanel({ open, onOpenChange, offers, loading, error, onC
     e.preventDefault();
     if (!canSubmit || submitting) return;
     setSubmitting(true);
+    setPhotoError('');
+    setFormError('');
     try {
       await onCreate({
         category,
@@ -131,13 +142,13 @@ export function OfferHelpPanel({ open, onOpenChange, offers, loading, error, onC
         contactName: contactName.trim(),
         contactPhone: contactPhone.trim(),
         location: location.trim(),
-        photo,
+        photo: photo ?? null,
       });
       resetForm();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (cause) {
-      setPhotoError(cause instanceof Error ? cause.message : 'Your offer could not be posted.');
+      setFormError(cause instanceof Error ? cause.message : 'Your offer could not be posted. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -212,11 +223,30 @@ export function OfferHelpPanel({ open, onOpenChange, offers, loading, error, onC
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => handlePhoto(e.target.files?.[0])} />
                 <button type="button" onClick={() => fileRef.current?.click()} className="flex w-full items-center gap-3 rounded-lg border border-dashed border-border bg-secondary/20 px-3 py-3 text-left transition-colors hover:bg-secondary/40">
                   {photo ? <ImagePlus className="h-5 w-5 text-success shrink-0" /> : <Camera className="h-5 w-5 text-muted-foreground shrink-0" />}
-                  <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold">{photo?.name || 'Add a photo of the supplies or setup'}</span><span className="block text-[10px] text-muted-foreground">JPG, PNG, or WebP · max 5 MB</span></span>
-                  {photo && <X className="h-4 w-4 text-muted-foreground shrink-0" onClick={(e) => { e.stopPropagation(); setPhoto(null); if (fileRef.current) fileRef.current.value = ''; }} />}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-semibold">{photo?.name || 'Add a photo of the supplies or setup'}</span>
+                    <span className="block text-[10px] text-muted-foreground">Optional · JPG, PNG, or WebP · max 5 MB</span>
+                  </span>
+                  {photo && (
+                    <X
+                      className="h-4 w-4 text-muted-foreground hover:text-foreground shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPhoto(null);
+                        setPhotoError('');
+                        if (fileRef.current) fileRef.current.value = '';
+                      }}
+                    />
+                  )}
                 </button>
                 {photoError && <p className="text-xs text-alert">{photoError}</p>}
               </div>
+
+              {formError && (
+                <p className="rounded-lg border border-alert/30 bg-alert/10 px-3 py-2 text-xs font-medium text-alert">
+                  {formError}
+                </p>
+              )}
 
               <Button type="submit" disabled={!canSubmit || submitting} className="h-11 w-full bg-success font-bold text-white hover:bg-success/90">
                 <Send className="h-4 w-4" /> {submitting ? 'Posting offer...' : 'Post Available Help'}

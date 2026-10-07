@@ -19,6 +19,8 @@ export interface VolunteerProfile {
   gender: string;
   phone: string;
   email: string;
+  latitude?: number | null;
+  longitude?: number | null;
   locationPermission: boolean;
   registeredAt: number;
 }

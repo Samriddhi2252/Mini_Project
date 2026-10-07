@@ -14,17 +14,17 @@ import type { AidRequest, Shelter, Volunteer, RequestCategory } from '@/types';
 // ── Badrinath / Joshimath data ─────────────────────────────────────────────
 import {
   MAP_CENTER, MAP_ZOOM, MAP_ZOOM_MIN, MAP_ZOOM_MAX,
-  ROADS_GEOJSON, RIVERS_GEOJSON,
   LANDSLIDE_ZONES_GEOJSON, FLOOD_ZONES_GEOJSON, SAFE_ZONES_GEOJSON,
   EMERGENCY_SHELTERS, HOSPITALS, EMERGENCY_RESPONSE, DISASTER_MARKERS,
-  SEARCH_INDEX, PLACE_LABELS, ROAD_LABELS, BUILDINGS_GEOJSON, FAMOUS_POIS,
+  SEARCH_INDEX,
 } from '@/data/joshimath-map-data';
 
 // ── Delhi NCR data ─────────────────────────────────────────────────────────
 import {
   NCR_CENTER, NCR_ZOOM, NCR_ZOOM_MIN, NCR_ZOOM_MAX,
-  NCR_ROADS_GEOJSON, NCR_RIVERS_GEOJSON, NCR_FLOOD_ZONES_GEOJSON,
-  NCR_PLACE_LABELS, NCR_ROAD_LABELS, NCR_FAMOUS_POIS, NCR_SEARCH_INDEX,
+  NCR_FLOOD_ZONES_GEOJSON, NCR_SAFE_ZONES_GEOJSON,
+  NCR_EMERGENCY_SHELTERS, NCR_HOSPITALS, NCR_EMERGENCY_RESPONSE, NCR_DISASTER_MARKERS,
+  NCR_SEARCH_INDEX,
 } from '@/data/delhi-ncr-map-data';
 
 import type { EmergencyLocation, SearchEntry } from '@/data/joshimath-map-data';
@@ -104,9 +104,9 @@ const DARK = {
   highway: '#c8d4e8', majorRoad: '#8fa3bc', minorRoad: '#5c7080',
   highwayCasing: '#0f2a3d',
   river: '#38bdf8', stream: '#7dd3fc', riverGlow: '#0369a1',
-  slideCrit: '#f97316', slideHigh: '#fb923c', slideMod: '#fbbf24',
-  floodCrit: '#1d4ed8', floodHigh: '#2563eb', floodMod: '#3b82f6',
-  safe: '#16a34a',
+  slideCrit: '#ef4444', slideHigh: '#f97316', slideMod: '#eab308',
+  floodCrit: '#ef4444', floodHigh: '#f97316', floodMod: '#eab308',
+  safe: '#22c55e',
   bgDeep: '#0c1827', bgMid: '#122033', bgHill: '#1a2d40',
   labelBg: 'rgba(10,22,36,0.82)', labelBorder: 'rgba(59,130,246,0.4)',
   labelColor: '#f1f5f9', labelSub: '#64a8cc',
@@ -118,9 +118,9 @@ const LIGHT = {
   highway: '#1e3a5f', majorRoad: '#374e6a', minorRoad: '#5a6e82',
   highwayCasing: '#ffffff',
   river: '#0369a1', stream: '#0284c7', riverGlow: '#bae6fd',
-  slideCrit: '#c2410c', slideHigh: '#ea580c', slideMod: '#d97706',
-  floodCrit: '#1e40af', floodHigh: '#1d4ed8', floodMod: '#2563eb',
-  safe: '#15803d',
+  slideCrit: '#dc2626', slideHigh: '#ea580c', slideMod: '#d97706',
+  floodCrit: '#dc2626', floodHigh: '#ea580c', floodMod: '#d97706',
+  safe: '#16a34a',
   bgDeep: '#c8dce8', bgMid: '#d4e6f0', bgHill: '#bdd0dc',
   labelBg: 'rgba(255,255,255,0.93)', labelBorder: 'rgba(30,58,95,0.35)',
   labelColor: '#0f172a', labelSub: '#1e3a5f',
@@ -135,17 +135,25 @@ const C = DARK;
 // Layer visibility — shared across both regions
 // ─────────────────────────────────────────────────────────────────────────────
 interface LayerVisibility {
-  roads: boolean; rivers: boolean;
-  landslides: boolean; floods: boolean; safeZones: boolean;
-  shelters: boolean; hospitals: boolean; response: boolean;
-  risks: boolean; requests: boolean; labels: boolean;
-  buildings: boolean; pois: boolean;
+  landslides: boolean;
+  floods: boolean;
+  safeZones: boolean;
+  shelters: boolean;
+  hospitals: boolean;
+  response: boolean;
+  risks: boolean;
+  requests: boolean;
 }
 
 const DEFAULT_LAYERS: LayerVisibility = {
-  roads: true, rivers: true, landslides: true, floods: true, safeZones: true,
-  shelters: true, hospitals: true, response: true, risks: true, requests: true,
-  labels: false, buildings: true, pois: true,
+  landslides: true,
+  floods: true,
+  safeZones: true,
+  shelters: true,
+  hospitals: true,
+  response: true,
+  risks: true,
+  requests: true,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -210,84 +218,8 @@ function buildPopupHtml(loc: EmergencyLocation): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared map-building helpers (called for both regions)
+// Shared map-building helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-/** Render roads GeoJSON into a layer group using casing+fill for highways */
-function buildRoadsGroup(
-  map: L.Map,
-  geojson: GeoJSON.FeatureCollection,
-  pane: string,
-  P = DARK,
-): L.LayerGroup {
-  const group = L.layerGroup();
-  geojson.features.forEach(f => {
-    const p = f.properties as { name: string; width: string };
-    const isHwy = p.width === 'primary';
-    const isSec = p.width === 'secondary';
-    if (isHwy) {
-      L.geoJSON(f as GeoJSON.Feature, {
-        pane, style: { color: P.highwayCasing, weight: 7, opacity: 0.9, lineCap: 'round', lineJoin: 'round' },
-      }).addTo(group);
-      L.geoJSON(f as GeoJSON.Feature, {
-        pane, style: { color: P.highway, weight: 4, opacity: 1, lineCap: 'round', lineJoin: 'round' },
-      })
-        .bindTooltip(`<div class="tt-row"><span class="tt-hwy">HWY</span>${p.name}</div>`,
-          { sticky: true, className: 'map-tt', direction: 'top' })
-        .addTo(group);
-    } else if (isSec) {
-      L.geoJSON(f as GeoJSON.Feature, {
-        pane, style: { color: P.majorRoad, weight: 2.5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' },
-      })
-        .bindTooltip(`<div class="tt-row">${p.name}</div>`,
-          { sticky: true, className: 'map-tt', direction: 'top' })
-        .addTo(group);
-    } else {
-      L.geoJSON(f as GeoJSON.Feature, {
-        pane, style: {
-          color: P.minorRoad, weight: 1.5, opacity: 0.75, dashArray: '5 4',
-          lineCap: 'round', lineJoin: 'round'
-        },
-      })
-        .bindTooltip(`<div class="tt-row">${p.name}</div>`,
-          { sticky: true, className: 'map-tt', direction: 'top' })
-        .addTo(group);
-    }
-  });
-  return group;
-}
-
-/** Render rivers GeoJSON with glow casing */
-function buildRiversGroup(
-  map: L.Map,
-  geojson: GeoJSON.FeatureCollection,
-  pane: string,
-  P = DARK,
-): L.LayerGroup {
-  const group = L.layerGroup();
-  geojson.features.forEach(f => {
-    const p = f.properties as { name: string; type: string };
-    const isStream = p.type === 'stream' || p.type === 'wetland';
-    if (!isStream) {
-      L.geoJSON(f as GeoJSON.Feature, {
-        pane, style: { color: P.riverGlow, weight: 6, opacity: 0.35, lineCap: 'round' },
-      }).addTo(group);
-    }
-    L.geoJSON(f as GeoJSON.Feature, {
-      pane, style: {
-        color: isStream ? P.stream : P.river,
-        weight: isStream ? 1.5 : 3, opacity: isStream ? 0.8 : 1,
-        dashArray: isStream ? '4 4' : undefined, lineCap: 'round',
-      },
-    })
-      .bindTooltip(
-        `<div class="tt-row"><span class="tt-dot" style="background:${P.river}"></span>${p.name}</div>`,
-        { sticky: true, className: 'map-tt', direction: 'top' },
-      )
-      .addTo(group);
-  });
-  return group;
-}
 
 /** Render flood / hazard polygon zones */
 function buildFloodGroup(
@@ -300,234 +232,32 @@ function buildFloodGroup(
   geojson.features.forEach(f => {
     const p = f.properties as { name: string; severity: string; description: string };
     const col = p.severity === 'critical' ? P.floodCrit : p.severity === 'high' ? P.floodHigh : P.floodMod;
-    L.geoJSON(f as GeoJSON.Feature, {
-      pane, style: { color: col, fillColor: col, fillOpacity: 0.22, weight: 2, opacity: 0.8, dashArray: '8 5' },
-    })
-      .bindTooltip(
-        `<div class="tt-row"><span class="tt-dot" style="background:${col}"></span>
+    const layer = L.geoJSON(f as GeoJSON.Feature, {
+      pane,
+      style: {
+        color: col,
+        fillColor: col,
+        fillOpacity: 0.18,
+        weight: 2,
+        opacity: 0.85,
+        dashArray: p.severity === 'critical' ? undefined : '6 4',
+      },
+    });
+    layer.on({
+      mouseover: (e) => {
+        (e.target as L.Path).setStyle({ fillOpacity: 0.32, weight: 2.5 });
+      },
+      mouseout: (e) => {
+        (e.target as L.Path).setStyle({ fillOpacity: 0.18, weight: 2 });
+      },
+    });
+    layer.bindTooltip(
+      `<div class="tt-row"><span class="tt-dot" style="background:${col}"></span>
        <b>Flood Zone · ${p.severity.toUpperCase()}</b></div>${p.name}
-       <div class="tt-sub">${(p.description || '').slice(0, 80)}…</div>`,
-        { sticky: true, className: 'map-tt map-tt-wide', direction: 'top' },
-      )
-      .addTo(group);
-  });
-  return group;
-}
-
-/** Place label DivIcon markers, zoom-gated */
-function buildPlaceLabels(
-  map: L.Map,
-  labels: import('@/data/joshimath-map-data').PlaceLabel[],
-  pane: string,
-  P = DARK,
-): L.LayerGroup {
-  const group = L.layerGroup();
-  type LS = {
-    fontSize: number; fontWeight: string; color: string; subColor: string; subSize: number;
-    bg: string; border: string; radius: number; px: number; py: number;
-    shadowBlur: number; shadowColor: string; letterSpacing: string;
-    iconChar?: string; iconColor?: string;
-  };
-
-  // Shared shadow depends on theme
-  const sh = P === LIGHT ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.75)';
-
-  const TS: Record<string, LS> = {
-    city: {
-      fontSize: 14, fontWeight: '800', color: P.labelColor, subColor: P.labelSub, subSize: 9.5,
-      bg: P.labelBg, border: `1px solid ${P.labelBorder}`,
-      radius: 6, px: 7, py: 3, shadowBlur: 10, shadowColor: sh, letterSpacing: '0.02em'
-    },
-    town: {
-      fontSize: 11.5, fontWeight: '700', color: P.labelColor, subColor: P.labelSub, subSize: 9,
-      bg: P === LIGHT ? 'rgba(255,255,255,0.88)' : 'rgba(10,22,36,0.75)',
-      border: `1px solid ${P.labelBorder}`,
-      radius: 5, px: 6, py: 2.5, shadowBlur: 7, shadowColor: sh, letterSpacing: '0.01em'
-    },
-    village: {
-      fontSize: 10, fontWeight: '600',
-      color: P === LIGHT ? '#1e3a5f' : '#cbd5e1',
-      subColor: P === LIGHT ? '#374e6a' : '#4a6a82', subSize: 8.5,
-      bg: P === LIGHT ? 'rgba(255,255,255,0.82)' : 'rgba(10,22,36,0.65)',
-      border: P === LIGHT ? '1px solid rgba(30,58,95,0.25)' : '1px solid rgba(35,70,100,0.3)',
-      radius: 4, px: 5, py: 2, shadowBlur: 5, shadowColor: sh, letterSpacing: '0em'
-    },
-    locality: {
-      fontSize: 9.5, fontWeight: '600',
-      color: P === LIGHT ? '#374e6a' : '#94a3b8',
-      subColor: P === LIGHT ? '#4a5e72' : '#3a5a72', subSize: 8,
-      bg: P === LIGHT ? 'rgba(255,255,255,0.78)' : 'rgba(10,22,36,0.60)',
-      border: P === LIGHT ? '1px solid rgba(30,58,95,0.20)' : '1px solid rgba(30,58,82,0.25)',
-      radius: 4, px: 5, py: 2, shadowBlur: 4, shadowColor: sh, letterSpacing: '0em'
-    },
-    landmark: {
-      fontSize: 10, fontWeight: '600',
-      color: P === LIGHT ? '#92400e' : '#fbbf24',
-      subColor: P === LIGHT ? '#78716c' : '#78716c', subSize: 8.5,
-      bg: P === LIGHT ? 'rgba(255,251,235,0.92)' : 'rgba(10,18,28,0.72)',
-      border: P === LIGHT ? '1px solid rgba(146,64,14,0.30)' : '1px solid rgba(251,191,36,0.25)',
-      radius: 4, px: 5, py: 2, shadowBlur: 5, shadowColor: sh, letterSpacing: '0em',
-      iconChar: '◆', iconColor: P === LIGHT ? '#b45309' : '#fbbf24'
-    },
-    confluence: {
-      fontSize: 10, fontWeight: '700',
-      color: P === LIGHT ? '#0369a1' : '#38bdf8',
-      subColor: P === LIGHT ? '#0369a1' : '#0e4a6a', subSize: 8.5,
-      bg: P === LIGHT ? 'rgba(239,248,255,0.92)' : 'rgba(7,18,28,0.72)',
-      border: P === LIGHT ? '1px solid rgba(3,105,161,0.30)' : '1px solid rgba(56,189,248,0.3)',
-      radius: 4, px: 5, py: 2, shadowBlur: 5, shadowColor: sh, letterSpacing: '0em',
-      iconChar: '~', iconColor: P === LIGHT ? '#0369a1' : '#38bdf8'
-    },
-    pass: {
-      fontSize: 10, fontWeight: '600',
-      color: P === LIGHT ? '#374151' : '#a3b4c2',
-      subColor: P === LIGHT ? '#4a5568' : '#4a6070', subSize: 8.5,
-      bg: P === LIGHT ? 'rgba(248,250,252,0.90)' : 'rgba(10,20,30,0.65)',
-      border: P === LIGHT ? '1px solid rgba(55,65,81,0.25)' : '1px solid rgba(80,110,140,0.25)',
-      radius: 4, px: 5, py: 2, shadowBlur: 4, shadowColor: sh, letterSpacing: '0.02em',
-      iconChar: '▲', iconColor: P === LIGHT ? '#374151' : '#a3b4c2'
-    },
-    glacier: {
-      fontSize: 10, fontWeight: '600',
-      color: P === LIGHT ? '#0c4a6e' : '#bae6fd',
-      subColor: P === LIGHT ? '#0369a1' : '#1a4a60', subSize: 8.5,
-      bg: P === LIGHT ? 'rgba(240,249,255,0.92)' : 'rgba(8,18,28,0.70)',
-      border: P === LIGHT ? '1px solid rgba(12,74,110,0.30)' : '1px solid rgba(186,230,253,0.25)',
-      radius: 4, px: 5, py: 2, shadowBlur: 4, shadowColor: sh, letterSpacing: '0em',
-      iconChar: '❄', iconColor: P === LIGHT ? '#0c4a6e' : '#bae6fd'
-    },
-  };
-  labels.forEach(place => {
-    const st = TS[place.tier] ?? TS.village;
-    const minZ = place.minZoom ?? 10;
-    const iconPart = st.iconChar ? `<span style="margin-right:4px;font-size:${st.fontSize - 2}px;color:${st.iconColor}">${st.iconChar}</span>` : '';
-    const subPart = place.subtext ? `<div style="font-size:${st.subSize}px;color:${st.subColor};margin-top:1px;line-height:1.2;font-weight:500">${place.subtext}</div>` : '';
-    const dotPart = (place.tier === 'city' || place.tier === 'town')
-      ? `<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${place.tier === 'city' ? '#3b82f6' : '#475569'};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : '';
-    const html = `<div style="display:inline-flex;flex-direction:column;align-items:flex-start;
-      background:${st.bg};border:${st.border};border-radius:${st.radius}px;padding:${st.py}px ${st.px}px;
-      box-shadow:0 2px ${st.shadowBlur}px ${st.shadowColor};backdrop-filter:blur(6px);
-      pointer-events:none;user-select:none;white-space:nowrap;">
-      <div style="display:flex;align-items:center;line-height:1.25">${dotPart}${iconPart}
-        <span style="font-family:'Inter',system-ui,sans-serif;font-size:${st.fontSize}px;
-          font-weight:${st.fontWeight};color:${st.color};letter-spacing:${st.letterSpacing}">${place.name}</span>
-      </div>${subPart}</div>`;
-    const icon = L.divIcon({
-      html, className: `place-label place-label-${place.tier}`,
-      iconSize: undefined as unknown as L.PointExpression, iconAnchor: [0, 0]
-    });
-    const marker = L.marker(place.coords, {
-      icon, pane,
-      zIndexOffset: place.tier === 'city' ? 1000 : place.tier === 'town' ? 500 : 0,
-      interactive: false, keyboard: false
-    });
-    marker.addTo(group);
-    map.on('zoomend', () => { const el = marker.getElement(); if (el) el.style.display = map.getZoom() >= minZ ? '' : 'none'; });
-    marker.once('add', () => { const el = marker.getElement(); if (el) el.style.display = map.getZoom() >= minZ ? '' : 'none'; });
-  });
-  return group;
-}
-
-/** Road name badge labels */
-function buildRoadLabels(
-  map: L.Map,
-  roadLabels: import('@/data/joshimath-map-data').RoadLabel[],
-  pane: string,
-  P = DARK,
-): L.LayerGroup {
-  const group = L.layerGroup();
-  roadLabels.forEach(rl => {
-    const isHwy = rl.type === 'highway';
-    const isSec = rl.type === 'secondary';
-    const bg = isHwy ? P.roadBadgeBg
-      : isSec ? (P === LIGHT ? 'rgba(248,250,252,0.94)' : 'rgba(10,28,46,0.88)')
-        : (P === LIGHT ? 'rgba(241,245,249,0.90)' : 'rgba(8,22,36,0.82)');
-    const border = isHwy ? `1px solid ${P.roadBadgeBorder}`
-      : isSec ? (P === LIGHT ? '1px solid rgba(55,78,106,0.35)' : '1px solid rgba(143,163,188,0.4)')
-        : (P === LIGHT ? '1px solid rgba(90,110,130,0.28)' : '1px solid rgba(92,112,128,0.35)');
-    const color = isHwy ? P.roadBadgeColor
-      : isSec ? P.majorRoad
-        : P.minorRoad;
-    const shieldBg = P === LIGHT ? 'rgba(30,58,95,0.12)' : 'rgba(59,130,246,0.25)';
-    const shieldBorder = P === LIGHT ? '1px solid rgba(30,58,95,0.35)' : '1px solid rgba(59,130,246,0.4)';
-    const shieldColor = P === LIGHT ? '#1e3a5f' : '#93c5fd';
-    const shield = isHwy
-      ? `<span style="display:inline-flex;align-items:center;justify-content:center;
-          background:${shieldBg};border:${shieldBorder};
-          border-radius:3px;padding:0 4px;margin-right:4px;
-          font-size:9px;font-weight:800;color:${shieldColor};line-height:1.4">${rl.short}</span>` : '';
-    const label = isHwy ? '' : `<span style="font-size:${isSec ? 10 : 9}px;color:${color};font-weight:${isHwy ? '700' : '600'}">${rl.short}</span>`;
-    const html = `<div style="display:inline-flex;align-items:center;background:${bg};border:${border};
-      border-radius:4px;padding:2px 6px;box-shadow:0 1px 5px rgba(0,0,0,${P === LIGHT ? '0.14' : '0.5'});
-      backdrop-filter:blur(4px);pointer-events:none;user-select:none;white-space:nowrap;
-      transform:rotate(${rl.rotation ?? 0}deg);font-family:'Inter',system-ui,sans-serif;">
-      ${shield}${label}</div>`;
-    const icon = L.divIcon({
-      html, className: 'road-label',
-      iconSize: undefined as unknown as L.PointExpression, iconAnchor: [0, 0]
-    });
-    const marker = L.marker(rl.coords, { icon, pane, interactive: false, keyboard: false });
-    const minZ = rl.minZoom ?? 12;
-    marker.addTo(group);
-    map.on('zoomend', () => { const el = marker.getElement(); if (el) el.style.display = map.getZoom() >= minZ ? '' : 'none'; });
-    marker.once('add', () => { const el = marker.getElement(); if (el) el.style.display = map.getZoom() >= minZ ? '' : 'none'; });
-  });
-  return group;
-}
-
-/** Famous POI icon markers */
-function buildPoisGroup(
-  map: L.Map,
-  pois: import('@/data/joshimath-map-data').FamousPoi[],
-  pane: string,
-): L.LayerGroup {
-  const IC: Record<string, { sym: string; bg: string; border: string; textColor: string }> = {
-    temple: { sym: '🛕', bg: 'rgba(146,64,14,0.85)', border: 'rgba(217,119,6,0.7)', textColor: '#fde68a' },
-    gurudwara: { sym: '🏯', bg: 'rgba(3,84,63,0.85)', border: 'rgba(6,182,212,0.5)', textColor: '#a7f3d0' },
-    government: { sym: '🏛', bg: 'rgba(5,46,22,0.85)', border: 'rgba(34,197,94,0.5)', textColor: '#86efac' },
-    school: { sym: '🏫', bg: 'rgba(7,89,133,0.85)', border: 'rgba(56,189,248,0.5)', textColor: '#bae6fd' },
-    market: { sym: '🏪', bg: 'rgba(66,32,6,0.85)', border: 'rgba(234,179,8,0.5)', textColor: '#fef08a' },
-    hotel: { sym: '🏨', bg: 'rgba(30,27,75,0.85)', border: 'rgba(139,92,246,0.5)', textColor: '#ddd6fe' },
-    infrastructure: { sym: '⚡', bg: 'rgba(30,27,30,0.85)', border: 'rgba(161,161,170,0.5)', textColor: '#d4d4d8' },
-    viewpoint: { sym: '🔭', bg: 'rgba(5,46,22,0.85)', border: 'rgba(52,211,153,0.5)', textColor: '#6ee7b7' },
-    bus_stand: { sym: '🚌', bg: 'rgba(12,74,110,0.85)', border: 'rgba(14,165,233,0.5)', textColor: '#7dd3fc' },
-    bank: { sym: '🏦', bg: 'rgba(5,46,22,0.85)', border: 'rgba(34,197,94,0.5)', textColor: '#86efac' },
-    post_office: { sym: '📮', bg: 'rgba(127,29,29,0.85)', border: 'rgba(248,113,113,0.5)', textColor: '#fca5a5' },
-    locality: { sym: '📍', bg: 'rgba(30,40,60,0.85)', border: 'rgba(100,130,180,0.5)', textColor: '#93c5fd' },
-  };
-  const group = L.layerGroup();
-  pois.forEach(poi => {
-    const ic = IC[poi.category] ?? IC.government;
-    const minZ = poi.minZoom ?? 13;
-    const iconHtml = `<div style="display:flex;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer;">
-      <div style="width:28px;height:28px;border-radius:8px;background:${ic.bg};border:1.5px solid ${ic.border};
-        display:flex;align-items:center;justify-content:center;font-size:14px;
-        box-shadow:0 3px 10px rgba(0,0,0,0.55);">${ic.sym}</div>
-      <div style="margin-top:2px;background:rgba(8,18,30,0.88);border:1px solid rgba(30,58,82,0.5);
-        border-radius:3px;padding:1px 5px;font-family:'Inter',system-ui,sans-serif;
-        font-size:8.5px;font-weight:600;color:${ic.textColor};white-space:nowrap;
-        max-width:90px;overflow:hidden;text-overflow:ellipsis;">${poi.name}</div>
-    </div>`;
-    const popup = `<div style="width:230px;font-family:'Inter',system-ui,sans-serif;color:#e2e8f0;line-height:1.5">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="width:32px;height:32px;border-radius:8px;background:${ic.bg};border:1.5px solid ${ic.border};
-          display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">${ic.sym}</div>
-        <div><p style="font-size:13px;font-weight:700;color:#f1f5f9;margin:0;line-height:1.3">${poi.name}</p>
-          <p style="font-size:10px;color:${ic.textColor};margin:0;text-transform:capitalize">${poi.category.replace('_', ' ')}</p>
-        </div></div>
-      ${poi.address ? `<p style="font-size:10px;color:#64748b;margin:0 0 6px">📍 ${poi.address}</p>` : ''}
-      <p style="font-size:11px;color:#8fb4d4;margin:0 0 8px;line-height:1.6">${poi.note}</p>
-      ${poi.phone && poi.phone !== '—' ? `<div style="padding-top:8px;border-top:1px solid #1e3a52;
-        display:flex;align-items:center;gap:6px;font-size:11px;color:#5d8aaa">
-        <span>📞</span><span style="color:#93c5fd">${poi.phone}</span></div>` : ''}
-    </div>`;
-    const marker = L.marker(poi.coords, {
-      icon: L.divIcon({ html: iconHtml, className: 'poi-marker', iconSize: [28, 46], iconAnchor: [14, 28], popupAnchor: [0, -32] }),
-      pane, zIndexOffset: 100,
-    }).bindPopup(popup, { className: 'map-popup', maxWidth: 260 });
-    marker.addTo(group);
-    map.on('zoomend', () => { const el = marker.getElement(); if (el) el.style.display = map.getZoom() >= minZ ? '' : 'none'; });
-    marker.once('add', () => { const el = marker.getElement(); if (el) el.style.display = map.getZoom() >= minZ ? '' : 'none'; });
+       <div class="tt-sub">${(p.description || '').slice(0, 95)}…</div>`,
+      { sticky: true, className: 'map-tt map-tt-wide', direction: 'top' },
+    );
+    layer.addTo(group);
   });
   return group;
 }
@@ -596,26 +326,14 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
 
     // Custom z-ordered panes
     const hazardPane = map.createPane('hazard'); hazardPane.style.zIndex = '200';
-    const bldPane = map.createPane('buildings'); bldPane.style.zIndex = '280';
-    const roadPane = map.createPane('road'); roadPane.style.zIndex = '300';
-    const waterPane = map.createPane('water'); waterPane.style.zIndex = '310';
-    const rlPane = map.createPane('roadLabels'); rlPane.style.zIndex = '320'; rlPane.style.pointerEvents = 'none';
-    const labPane = map.createPane('labels'); labPane.style.zIndex = '350'; labPane.style.pointerEvents = 'none';
-    const poiPane = map.createPane('pois'); poiPane.style.zIndex = '390';
+    const safeZonePane = map.createPane('safeZonePane'); safeZonePane.style.zIndex = '220';
     const mrkPane = map.createPane('markerLayer'); mrkPane.style.zIndex = '400';
-
-    // ── Roads ──
-    const roadsGroup = buildRoadsGroup(map, region === 'ncr' ? NCR_ROADS_GEOJSON : ROADS_GEOJSON, 'road', P);
-
-    // ── Rivers ──
-    const riversGroup = buildRiversGroup(map, region === 'ncr' ? NCR_RIVERS_GEOJSON : RIVERS_GEOJSON, 'water', P);
 
     // ── Flood zones ──
     const floodsGroup = buildFloodGroup(map, region === 'ncr' ? NCR_FLOOD_ZONES_GEOJSON : FLOOD_ZONES_GEOJSON, 'hazard', P);
 
-    // ── Badrinath-only hazard layers ──
+    // ── Landslide zones (Badrinath only) ──
     const landslidesGroup = L.layerGroup();
-    const safeGroup = L.layerGroup();
     if (region === 'badrinath') {
       LANDSLIDE_ZONES_GEOJSON.features.forEach(f => {
         const p = f.properties as { name: string; severity: string; description: string };
@@ -629,92 +347,71 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
             { sticky: true, className: 'map-tt map-tt-wide', direction: 'top' })
           .addTo(landslidesGroup);
       });
-      SAFE_ZONES_GEOJSON.features.forEach(f => {
-        const p = f.properties as { name: string; description: string; capacity: number };
-        L.geoJSON(f as GeoJSON.Feature, {
-          pane: 'hazard', style: { color: P.safe, fillColor: P.safe, fillOpacity: 0.12, weight: 1.5, opacity: 0.7, dashArray: '6 4' },
-        })
-          .bindTooltip(`<div class="tt-row"><span class="tt-dot" style="background:${P.safe}"></span>
-          <b>Safe Zone</b></div>${p.name}`,
-            { sticky: true, className: 'map-tt', direction: 'top' })
-          .addTo(safeGroup);
-      });
     }
 
-    // ── Emergency markers (Badrinath only) ──
+    // ── Safe Zones (Elevated Havens & Relief Hubs — strictly non-overlapping) ──
+    const safeGroup = L.layerGroup();
+    const safeGeo = region === 'ncr' ? NCR_SAFE_ZONES_GEOJSON : SAFE_ZONES_GEOJSON;
+    safeGeo.features.forEach(f => {
+      const p = f.properties as { name: string; description: string; capacity?: number };
+      const layer = L.geoJSON(f as GeoJSON.Feature, {
+        pane: 'safeZonePane',
+        style: {
+          color: P.safe,
+          fillColor: P.safe,
+          fillOpacity: 0.18,
+          weight: 2,
+          opacity: 0.9,
+          dashArray: '6 4',
+        },
+      });
+      layer.on({
+        mouseover: (e) => (e.target as L.Path).setStyle({ fillOpacity: 0.32, weight: 2.5 }),
+        mouseout: (e) => (e.target as L.Path).setStyle({ fillOpacity: 0.18, weight: 2 }),
+      });
+      layer.bindTooltip(`<div class="tt-row"><span class="tt-dot" style="background:${P.safe}"></span>
+        <b>Safe Zone · CLEAR</b></div>${p.name}
+        <div class="tt-sub">${(p.description || '').slice(0, 90)}…</div>
+        ${p.capacity ? `<div style="font-size:10px;color:#4ade80;margin-top:2px">Capacity: ~${p.capacity.toLocaleString()}</div>` : ''}`,
+        { sticky: true, className: 'map-tt map-tt-wide', direction: 'top' })
+        .addTo(safeGroup);
+    });
+
+    // ── Emergency markers (Facilities & Response) ──
     const sheltersGroup = L.layerGroup();
     const hospitalsGroup = L.layerGroup();
     const responseGroup = L.layerGroup();
     const risksGroup = L.layerGroup();
-    if (region === 'badrinath') {
-      const addM = (locs: EmergencyLocation[], icon: L.DivIcon, grp: L.LayerGroup) =>
-        locs.forEach(loc => L.marker(loc.coords, { icon, pane: 'markerLayer', zIndexOffset: 200 })
-          .bindPopup(buildPopupHtml(loc), { className: 'map-popup', maxWidth: 280 }).addTo(grp));
-      addM(EMERGENCY_SHELTERS, ICONS.shelter, sheltersGroup);
-      addM(HOSPITALS, ICONS.hospital, hospitalsGroup);
-      addM(EMERGENCY_RESPONSE, ICONS.response, responseGroup);
-      addM(DISASTER_MARKERS, ICONS.risk, risksGroup);
-    }
 
-    // ── Building footprints (Badrinath only) ──
-    const buildingsGroup = L.layerGroup();
-    if (region === 'badrinath') {
-      const BLD_COLORS: Record<string, { fill: string; stroke: string }> = isLight ? {
-        residential: { fill: '#dbeafe', stroke: '#2563eb' }, government: { fill: '#dcfce7', stroke: '#16a34a' },
-        commercial: { fill: '#fef9c3', stroke: '#ca8a04' }, religious: { fill: '#ffedd5', stroke: '#c2410c' },
-        educational: { fill: '#e0f2fe', stroke: '#0369a1' }, medical: { fill: '#fee2e2', stroke: '#dc2626' },
-        military: { fill: '#d1fae5', stroke: '#059669' }, utility: { fill: '#f3e8ff', stroke: '#7c3aed' },
-      } : {
-        residential: { fill: '#1a3a5c', stroke: '#2a5a82' }, government: { fill: '#1a3a2c', stroke: '#2a6a4a' },
-        commercial: { fill: '#2a2a10', stroke: '#6a5a1a' }, religious: { fill: '#2a1a08', stroke: '#b45309' },
-        educational: { fill: '#0a2a3a', stroke: '#1e6a8a' }, medical: { fill: '#1a0808', stroke: '#dc2626' },
-        military: { fill: '#101a10', stroke: '#4a7a4a' }, utility: { fill: '#1a1a2a', stroke: '#4a4a8a' },
-      };
-      type BP = { id: string; name: string; type: string; floors?: number; note?: string; cracked?: boolean };
-      BUILDINGS_GEOJSON.features.forEach(f => {
-        const p = f.properties as BP;
-        const col = BLD_COLORS[p.type] ?? { fill: '#1a2a3a', stroke: '#3a5a72' };
-        const crack = p.cracked === true;
-        L.geoJSON(f as GeoJSON.Feature, {
-          pane: 'buildings', style: {
-            fillColor: crack ? '#7c2020' : col.fill, color: crack ? '#ef4444' : col.stroke,
-            weight: crack ? 1.5 : 1, fillOpacity: 0.75, opacity: 1, dashArray: crack ? '4 2' : undefined,
-          }
-        })
-          .bindTooltip(`<div class="tt-row"><span class="tt-dot" style="background:${crack ? '#ef4444' : col.stroke}"></span>
-          <b>${p.name}</b></div>
-          <div style="font-size:10px;color:#5d8aaa;margin-top:2px">${p.type}${p.floors ? ' · ' + p.floors + ' fl' : ''}</div>
-          ${crack ? '<div style="margin-top:5px;padding:3px 7px;background:#7c202060;border:1px solid #ef444460;border-radius:4px;font-size:10px;color:#ef4444;font-weight:700">⚠ CRACKED</div>' : ''}
-          <div class="tt-sub">${p.note ?? ''}</div>`,
-            { sticky: true, className: 'map-tt map-tt-wide', direction: 'top' })
-          .addTo(buildingsGroup);
+    const shelterList = region === 'ncr' ? NCR_EMERGENCY_SHELTERS : EMERGENCY_SHELTERS;
+    const hospitalList = region === 'ncr' ? NCR_HOSPITALS : HOSPITALS;
+    const responseList = region === 'ncr' ? NCR_EMERGENCY_RESPONSE : EMERGENCY_RESPONSE;
+    const riskList = region === 'ncr' ? NCR_DISASTER_MARKERS : DISASTER_MARKERS;
+
+    const addM = (locs: EmergencyLocation[], icon: L.DivIcon, grp: L.LayerGroup) =>
+      locs.forEach(loc => {
+        const marker = L.marker(loc.coords, { icon, pane: 'markerLayer', zIndexOffset: 200 })
+          .bindPopup(buildPopupHtml(loc), { className: 'map-popup', maxWidth: 280 });
+        marker.on('click', () => setSelLoc(loc));
+        marker.addTo(grp);
       });
-      map.on('zoomend', () => { const el = map.getPane('buildings'); if (el) el.style.display = map.getZoom() >= 13 ? '' : 'none'; });
-      const bpe = map.getPane('buildings'); if (bpe) bpe.style.display = map.getZoom() >= 13 ? '' : 'none';
-    }
-
-    // ── Place labels ──
-    const pl = region === 'ncr' ? NCR_PLACE_LABELS : PLACE_LABELS;
-    const labelsGroup = buildPlaceLabels(map, pl, 'labels', P);
-
-    // ── Road labels ──
-    const rl = region === 'ncr' ? NCR_ROAD_LABELS : ROAD_LABELS;
-    const roadLabelsGroup = buildRoadLabels(map, rl, 'roadLabels', P);
-
-    // ── POI markers ──
-    const pm = region === 'ncr' ? NCR_FAMOUS_POIS : FAMOUS_POIS;
-    const poisGroup = buildPoisGroup(map, pm, 'pois');
+    addM(shelterList, ICONS.shelter, sheltersGroup);
+    addM(hospitalList, ICONS.hospital, hospitalsGroup);
+    addM(responseList, ICONS.response, responseGroup);
+    addM(riskList, ICONS.risk, risksGroup);
 
     // ── Aid request markers (empty — filled by separate effect) ──
     const requestsGroup = L.layerGroup();
 
     groupsRef.current = {
-      safeZones: safeGroup, floods: floodsGroup, landslides: landslidesGroup,
-      roads: roadsGroup, rivers: riversGroup,
-      shelters: sheltersGroup, hospitals: hospitalsGroup,
-      response: responseGroup, risks: risksGroup, requests: requestsGroup,
-      labels: labelsGroup, roadLabels: roadLabelsGroup,
-      buildings: buildingsGroup, pois: poisGroup,
+      safeZones: safeGroup,
+      floods: floodsGroup,
+      landslides: landslidesGroup,
+      shelters: sheltersGroup,
+      hospitals: hospitalsGroup,
+      response: responseGroup,
+      risks: risksGroup,
+      requests: requestsGroup,
     };
     Object.values(groupsRef.current).forEach(g => g.addTo(map));
 
@@ -723,10 +420,6 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
       const g = groupsRef.current[key];
       if (!g) return;
       if (!on) map.removeLayer(g);
-      if (key === 'labels' && !on) {
-        const rg = groupsRef.current['roadLabels'];
-        if (rg) map.removeLayer(rg);
-      }
     });
 
     mapRef.current = map;
@@ -833,10 +526,6 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
     setLayers(prev => {
       const next = { ...prev, [key]: !prev[key] };
       next[key] ? grp.addTo(map) : map.removeLayer(grp);
-      if (key === 'labels') {
-        const rg = groupsRef.current['roadLabels'];
-        if (rg) next[key] ? rg.addTo(map) : map.removeLayer(rg);
-      }
       return next;
     });
   }, []);
@@ -1067,11 +756,11 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
   const flyTo = useCallback((entry: SearchEntry) => {
     mapRef.current?.setView(entry.coords, 14);
     setSearchOpen(false); setSearchQuery(''); setSearchResults([]);
-    if (region === 'badrinath') {
-      const loc = [...EMERGENCY_SHELTERS, ...HOSPITALS, ...EMERGENCY_RESPONSE, ...DISASTER_MARKERS]
-        .find(l => l.id === entry.id);
-      if (loc) setSelLoc(loc);
-    }
+    const allLocs = region === 'ncr'
+      ? [...NCR_EMERGENCY_SHELTERS, ...NCR_HOSPITALS, ...NCR_EMERGENCY_RESPONSE, ...NCR_DISASTER_MARKERS]
+      : [...EMERGENCY_SHELTERS, ...HOSPITALS, ...EMERGENCY_RESPONSE, ...DISASTER_MARKERS];
+    const loc = allLocs.find(l => l.id === entry.id);
+    if (loc) setSelLoc(loc);
   }, [region]);
 
   // ── Region switch — no longer needed here (handled in StatusBanner) ───────
@@ -1079,16 +768,11 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
   // ── Layer defs for legend ────────────────────────────────────────────────
   type LayerDef = { key: keyof LayerVisibility; label: string; color: string; group: string };
   const layerDefs: LayerDef[] = [
-    { key: 'roads', label: 'Roads & Highways', color: '#c8d4e8', group: 'base' },
-    { key: 'rivers', label: 'Rivers & Water', color: '#38bdf8', group: 'base' },
-    { key: 'labels', label: 'Place Names', color: '#94a3b8', group: 'base' },
-    { key: 'buildings', label: 'Buildings', color: '#2a5a82', group: 'base' },
-    { key: 'pois', label: 'Famous Locations', color: '#fbbf24', group: 'base' },
-    { key: 'floods', label: 'Flood Zones', color: '#2563eb', group: 'hazard' },
+    { key: 'floods', label: 'Flood Zones', color: '#ef4444', group: 'hazard' },
     ...(region === 'badrinath' ? [
       { key: 'landslides' as keyof LayerVisibility, label: 'Landslide Risk', color: '#f97316', group: 'hazard' },
-      { key: 'safeZones' as keyof LayerVisibility, label: 'Safe Zones', color: '#16a34a', group: 'hazard' },
     ] : []),
+    { key: 'safeZones' as keyof LayerVisibility, label: 'Safe Zones', color: '#22c55e', group: 'hazard' },
     { key: 'shelters', label: 'Shelters', color: '#2563eb', group: 'location' },
     { key: 'hospitals', label: 'Hospitals', color: '#dc2626', group: 'location' },
     { key: 'response', label: 'Response Posts', color: '#d97706', group: 'location' },
@@ -1096,7 +780,6 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
     { key: 'requests', label: 'Aid Requests', color: '#a855f7', group: 'location' },
   ];
   const grouped = {
-    base: layerDefs.filter(l => l.group === 'base'),
     hazard: layerDefs.filter(l => l.group === 'hazard'),
     location: layerDefs.filter(l => l.group === 'location'),
   };
@@ -1104,11 +787,11 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
   // Quick hazard toggles (toolbar)
   type QT = { key: keyof LayerVisibility; icon: React.ReactNode; label: string; color: string };
   const quickToggles: QT[] = [
-    { key: 'floods', icon: <Droplets className="h-3.5 w-3.5" />, label: 'Flood', color: '#2563eb' },
+    { key: 'floods', icon: <Droplets className="h-3.5 w-3.5" />, label: 'Flood', color: '#ef4444' },
     ...(region === 'badrinath' ? [
       { key: 'landslides' as keyof LayerVisibility, icon: <TriangleAlert className="h-3.5 w-3.5" />, label: 'Slide', color: '#f97316' },
-      { key: 'safeZones' as keyof LayerVisibility, icon: <ShieldCheck className="h-3.5 w-3.5" />, label: 'Safe', color: '#16a34a' },
     ] : []),
+    { key: 'safeZones' as keyof LayerVisibility, icon: <ShieldCheck className="h-3.5 w-3.5" />, label: 'Safe', color: '#22c55e' },
   ];
 
   const coordLine = region === 'ncr'
@@ -1324,7 +1007,6 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
             </button>
           </div>
           <div className="max-h-[calc(100vh-280px)] overflow-y-auto p-2 space-y-3">
-            <LayerGroupUI label="Base" layers={grouped.base} active={layers} onToggle={toggleLayer} />
             <LayerGroupUI label="Hazards" layers={grouped.hazard} active={layers} onToggle={toggleLayer} />
             <LayerGroupUI label="Locations" layers={grouped.location} active={layers} onToggle={toggleLayer} />
             <div>

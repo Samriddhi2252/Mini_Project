@@ -1,10 +1,9 @@
 import {
-  Siren, Building2, Wifi, WifiOff, Power, Search,
+  Siren, Building2, Wifi, WifiOff, Search,
   BadgeCheck, Menu, Sun, Moon, Brain, ShieldAlert,
   ChevronDown, Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +17,6 @@ import type { NetworkStatus } from '@/hooks/use-network';
 
 interface TopNavProps {
   status: NetworkStatus;
-  onToggleNetwork: () => void;
   onSos: () => void;
   onShelter: () => void;
   onFindHelp: () => void;
@@ -34,7 +32,7 @@ interface TopNavProps {
 }
 
 export function TopNav({
-  status, onToggleNetwork, onSos, onShelter,
+  status, onSos, onShelter,
   onFindHelp, onOfferHelp, theme, onToggleTheme, onTriage,
   onNgoPortal, ngoLoggedIn, volunteerLoggedIn, ngoName,
 }: TopNavProps) {
@@ -95,26 +93,36 @@ export function TopNav({
             </div>
 
             {/* Separator */}
-            <div className="hidden md:block h-7 w-px bg-border/60" />
+            <div className="hidden sm:block h-7 w-px bg-border/60" />
 
-            {/* Network pill */}
-            <div className={cn(
-              'hidden md:flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold transition-all',
-              isOnline
-                ? 'border-success/30 bg-success/10 text-success'
-                : 'border-warning/30 bg-warning/10 text-warning',
-            )}>
+            {/* Network pill — automatic real-time network indicator */}
+            <div
+              className={cn(
+                'flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 sm:px-3 py-1 text-[11px] font-semibold transition-all select-none',
+                isOnline
+                  ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-400'
+                  : 'border-amber-500/35 bg-amber-500/10 text-amber-400',
+              )}
+              title={isOnline ? 'Network status: Online (Connected to internet)' : 'Network status: Offline (Local storage & queue active)'}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className={cn(
+                  'absolute inline-flex h-full w-full rounded-full opacity-75',
+                  isOnline ? 'animate-ping bg-emerald-400' : 'animate-ping bg-amber-400'
+                )} />
+                <span className={cn(
+                  'relative inline-flex h-2 w-2 rounded-full',
+                  isOnline ? 'bg-emerald-500' : 'bg-amber-500'
+                )} />
+              </span>
               {isOnline ? (
                 <>
-                  <Wifi className="h-3 w-3" />
+                  <Wifi className="h-3.5 w-3.5 text-emerald-400" />
                   <span>Online</span>
                 </>
               ) : (
                 <>
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-75" />
-                    <WifiOff className="relative h-2.5 w-2.5" />
-                  </span>
+                  <WifiOff className="h-3.5 w-3.5 text-amber-400" />
                   <span className="hidden lg:inline">Offline — Local Sync Active</span>
                   <span className="lg:hidden">Offline</span>
                 </>
@@ -124,17 +132,6 @@ export function TopNav({
 
           {/* ── RIGHT: Actions ── */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-
-            {/* Mock network toggle — desktop */}
-            <div className="hidden items-center gap-2 rounded-lg border border-border bg-secondary/40 px-2.5 py-1.5 lg:flex">
-              <Power className="h-3 w-3 text-muted-foreground" />
-              <span className="text-[11px] font-medium text-muted-foreground">Mock</span>
-              <Switch
-                checked={isOnline}
-                onCheckedChange={onToggleNetwork}
-                aria-label="Toggle mock network"
-              />
-            </div>
 
             {/* Action buttons — md+ */}
             <div className="hidden items-center gap-1.5 md:flex">
@@ -273,30 +270,33 @@ export function TopNav({
                     label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                   />
                   <DropdownMenuSeparator className="my-1 bg-border" />
-                  {/* Network toggle inline */}
-                  <div className="flex items-center justify-between rounded-md px-2 py-2 text-xs">
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Power className="h-3.5 w-3.5" />
-                      <span className="font-medium">Mock Network</span>
-                    </span>
-                    <Switch
-                      checked={isOnline}
-                      onCheckedChange={onToggleNetwork}
-                      aria-label="Toggle network mode"
-                    />
-                  </div>
-                  {/* Mobile network status */}
+                  {/* Real-time network status in mobile dropdown */}
                   <div className={cn(
-                    'mx-2 mt-1 mb-0.5 flex items-center gap-1.5 rounded-lg px-2.5 py-2',
-                    isOnline ? 'bg-success/10 border border-success/20' : 'bg-warning/10 border border-warning/20',
+                    'mx-2 my-1.5 flex items-center justify-between rounded-lg px-2.5 py-2 border select-none',
+                    isOnline ? 'border-emerald-500/25 bg-emerald-500/10' : 'border-amber-500/25 bg-amber-500/10',
                   )}>
-                    {isOnline
-                      ? <Wifi className="h-3 w-3 text-success" />
-                      : <WifiOff className="h-3 w-3 text-warning" />
-                    }
-                    <span className={cn('text-[11px] font-semibold', isOnline ? 'text-success' : 'text-warning')}>
-                      {isOnline ? 'Online' : 'Offline — Local Data Active'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className={cn(
+                          'absolute inline-flex h-full w-full rounded-full opacity-75',
+                          isOnline ? 'animate-ping bg-emerald-400' : 'animate-ping bg-amber-400'
+                        )} />
+                        <span className={cn(
+                          'relative inline-flex h-2 w-2 rounded-full',
+                          isOnline ? 'bg-emerald-500' : 'bg-amber-500'
+                        )} />
+                      </span>
+                      <span className="text-xs font-medium text-muted-foreground">Network Status</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {isOnline
+                        ? <Wifi className="h-3.5 w-3.5 text-emerald-400" />
+                        : <WifiOff className="h-3.5 w-3.5 text-amber-400" />
+                      }
+                      <span className={cn('text-xs font-bold', isOnline ? 'text-emerald-400' : 'text-amber-400')}>
+                        {isOnline ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>

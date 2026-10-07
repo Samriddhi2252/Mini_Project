@@ -30,21 +30,46 @@ export interface QueuedRequest {
 }
 
 export function useNetwork() {
-  const [status, setStatus] = useState<NetworkStatus>(() => {
-    if (typeof window === 'undefined') return 'online';
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved === 'offline' ? 'offline' : 'online';
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return true;
+    return typeof navigator.onLine === 'boolean' ? navigator.onLine : true;
   });
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, status);
-  }, [status]);
+    if (typeof window === 'undefined') return;
 
-  const toggle = useCallback(() => {
-    setStatus((s) => (s === 'online' ? 'offline' : 'online'));
+    // Remove legacy manual override if present in localStorage
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+
+    const handleOnline = () => {
+      setIsOnline(true);
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Sync on mount
+    if (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') {
+      setIsOnline(navigator.onLine);
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
-  return { status, toggle, isOnline: status === 'online' };
+  const status: NetworkStatus = isOnline ? 'online' : 'offline';
+
+  return { status, isOnline };
 }
 
 export function useOfflineQueue(isOnline: boolean) {

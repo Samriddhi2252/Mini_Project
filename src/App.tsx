@@ -41,7 +41,7 @@ import {
 import type { NgoProfile, VolunteerMember } from '@/types';
 
 function App() {
-  const { status, toggle, isOnline } = useNetwork();
+  const { status, isOnline } = useNetwork();
   const { queue, enqueue, clearQueue, removeFromQueue, queueCount } = useOfflineQueue(isOnline);
   const { offers, loading: offersLoading, error: offersError, createOffer } = useVolunteerOffers();
   const { theme, toggle: toggleTheme } = useTheme();
@@ -260,7 +260,6 @@ function App() {
     <div className="flex min-h-screen flex-col bg-background">
       <TopNav
         status={status}
-        onToggleNetwork={toggle}
         onSos={() => setSosOpen(true)}
         onShelter={() => setShelterOpen(true)}
         onFindHelp={() => setFindHelpOpen(true)}

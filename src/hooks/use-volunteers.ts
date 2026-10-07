@@ -49,6 +49,8 @@ export function useVolunteers() {
       gender:             input.gender,
       phone:              input.phone.trim(),
       email:              input.email.trim().toLowerCase(),
+      latitude:           input.locationPermission ? (input.latitude ?? null) : null,
+      longitude:          input.locationPermission ? (input.longitude ?? null) : null,
       locationPermission: input.locationPermission,
       registeredAt:       Date.now(),
     };
@@ -56,81 +58,63 @@ export function useVolunteers() {
     try {
       // ── PATH 1: Supabase ──────────────────────────────────────────────────
       if (isSupabaseConfigured) {
-        const payload = {
-          full_name:           input.fullName.trim(),
-          gender:              input.gender,
-          phone:               input.phone.trim(),
-          email:               input.email.trim().toLowerCase(),
-          latitude:            input.locationPermission ? input.latitude  : null,
-          longitude:           input.locationPermission ? input.longitude : null,
-          location_permission: input.locationPermission,
-          volunteer_status:    'registered' as VolunteerStatus,
-        };
+        try {
+          const payload = {
+            full_name:           input.fullName.trim(),
+            gender:              input.gender,
+            phone:               input.phone.trim(),
+            email:               input.email.trim().toLowerCase(),
+            latitude:            input.locationPermission ? input.latitude  : null,
+            longitude:           input.locationPermission ? input.longitude : null,
+            location_permission: input.locationPermission,
+            volunteer_status:    'registered' as VolunteerStatus,
+          };
 
-        // Upsert on email to prevent duplicate rows for the same person.
-        // The volunteers table has no UNIQUE constraint on email by default,
-        // so we fall back to a check-then-insert if upsert is unsupported.
-        const { data, error: upsertError } = await supabase
-          .from('volunteers')
-          .upsert(payload, { onConflict: 'email', ignoreDuplicates: false })
-          .select(
-            'id, full_name, gender, phone, email, latitude, longitude, location_permission, volunteer_status, created_at'
-          )
-          .maybeSingle();
+          const { data, error: upsertError } = await supabase
+            .from('volunteers')
+            .upsert(payload, { onConflict: 'email', ignoreDuplicates: false })
+            .select(
+              'id, full_name, gender, phone, email, latitude, longitude, location_permission, volunteer_status, created_at'
+            )
+            .maybeSingle();
 
-        if (upsertError) {
-          // If upsert fails because there's no unique index on email (older schema),
-          // try a plain insert and gracefully handle the duplicate error.
-          if (
-            upsertError.code === '42P10' ||  // no unique or exclusion constraint
-            upsertError.code === '23505'      // unique_violation (duplicate)
-          ) {
-            console.warn(
-              '[useVolunteers] Upsert fell back to plain insert (no unique email index).',
-              upsertError.message
-            );
-            const { data: insertData, error: insertError } = await supabase
-              .from('volunteers')
-              .insert(payload)
-              .select(
-                'id, full_name, gender, phone, email, latitude, longitude, location_permission, volunteer_status, created_at'
-              )
-              .maybeSingle();
+          if (upsertError) {
+            if (
+              upsertError.code === '42P10' ||  // no unique or exclusion constraint
+              upsertError.code === '23505'      // unique_violation (duplicate)
+            ) {
+              console.warn(
+                '[useVolunteers] Upsert fell back to plain insert (no unique email index).',
+                upsertError.message
+              );
+              const { data: insertData, error: insertError } = await supabase
+                .from('volunteers')
+                .insert(payload)
+                .select(
+                  'id, full_name, gender, phone, email, latitude, longitude, location_permission, volunteer_status, created_at'
+                )
+                .maybeSingle();
 
-            if (insertError) {
-              if (insertError.code === '23505') {
-                // Duplicate — treat as success (volunteer already registered)
-                console.info('[useVolunteers] Volunteer already registered (duplicate email), reusing existing record.');
-              } else {
-                console.error('[useVolunteers] Supabase insert error:', insertError);
-                throw new Error(
-                  'Unable to complete registration. Please try again. ' +
-                  `(${insertError.message})`
-                );
+              if (!insertError || insertError.code === '23505') {
+                saveVolunteerProfile(profile);
+                setRegistered(true);
+                return (insertData ?? null) as VolunteerRow | null;
               }
+              console.warn('[useVolunteers] Supabase insert failed, falling back:', insertError);
+            } else {
+              console.warn('[useVolunteers] Supabase upsert error, falling back:', upsertError);
             }
           } else {
-            console.error('[useVolunteers] Supabase upsert error:', upsertError);
-            throw new Error(
-              'Unable to complete registration. Please try again. ' +
-              `(${upsertError.message})`
-            );
+            saveVolunteerProfile(profile);
+            setRegistered(true);
+            return data as VolunteerRow | null;
           }
+        } catch (supabaseNetworkError) {
+          console.warn('[useVolunteers] Supabase request failed, falling back to local/server:', supabaseNetworkError);
         }
-
-        if (!data && !upsertError) {
-          // maybeSingle() returns null data when the row already existed and
-          // ignoreDuplicates is false — still a success for our purposes.
-          console.info('[useVolunteers] Volunteer registration: row already existed.');
-        }
-
-        saveVolunteerProfile(profile);
-        setRegistered(true);
-        return data as VolunteerRow | null;
       }
 
-      // ── PATH 2: Express server fallback (Supabase not configured) ─────────
-      // Uses relative /api/ path so Vite proxy forwards to localhost:3001.
+      // ── PATH 2: Express server fallback ──────────────────────────────────
       try {
         const res = await fetch('/api/volunteer/register', {
           method:  'POST',
@@ -154,13 +138,6 @@ export function useVolunteers() {
           return body.volunteer ?? null;
         }
 
-        // Server returned an error — still allow localStorage fallback below
-        const errBody = await res.json().catch(() => ({}));
-        console.warn(
-          '[useVolunteers] Express server responded with error:',
-          errBody.error ?? res.status
-        );
-        // If it's a known "already registered" response, treat as success
         if (res.status === 409) {
           console.info('[useVolunteers] Volunteer already registered on server.');
           saveVolunteerProfile(profile);
@@ -168,22 +145,22 @@ export function useVolunteers() {
           return null;
         }
       } catch (networkErr) {
-        // Server is not running — fall through to localStorage-only mode
         console.warn(
-          '[useVolunteers] Express server unreachable; falling back to localStorage-only mode.',
+          '[useVolunteers] Express server unreachable; falling back to localStorage mode.',
           networkErr
         );
       }
 
-      // ── PATH 3: localStorage-only (offline / demo mode) ──────────────────
-      console.warn(
-        '[useVolunteers] No backend available — volunteer registration stored in localStorage only. ' +
-        'Data will be lost on page refresh in a different browser.'
-      );
+      // ── PATH 3: localStorage fallback (offline / demo mode) ───────────────
       saveVolunteerProfile(profile);
       setRegistered(true);
       return null;
 
+    } catch (unexpectedErr) {
+      console.warn('[useVolunteers] Unexpected error during registration; persisting locally:', unexpectedErr);
+      saveVolunteerProfile(profile);
+      setRegistered(true);
+      return null;
     } finally {
       setRegistering(false);
     }

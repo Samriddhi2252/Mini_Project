@@ -500,68 +500,173 @@ export const NCR_FLOOD_ZONES_GEOJSON: GeoJSON.FeatureCollection = {
     {
       type: 'Feature',
       properties: {
-        name: 'Yamuna Floodplain — Central Delhi',
-        type: 'flood', severity: 'high',
-        description: 'Yamuna floodplain. Riverbanks flood annually during monsoon. ITO–Nizamuddin reach most affected.',
+        name: 'Yamuna River Corridor — North & Old Delhi',
+        type: 'flood',
+        severity: 'critical',
+        description: 'Critical flood zone. Water level above danger mark (208.66m). Ring Road, Nigambodh, Monastery Market & Yamuna Bazar flooded.',
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [77.2380, 28.6800], [77.2600, 28.6800],
-          [77.2640, 28.6200], [77.2560, 28.6050],
-          [77.2380, 28.6050], [77.2320, 28.6400],
-          [77.2380, 28.6800],
+          [77.2200, 28.7300],
+          [77.2360, 28.7280],
+          [77.2460, 28.6900],
+          [77.2480, 28.6500],
+          [77.2380, 28.6500],
+          [77.2320, 28.6800],
+          [77.2220, 28.7100],
+          [77.2200, 28.7300],
         ]],
       },
     },
     {
       type: 'Feature',
       properties: {
-        name: 'Yamuna Floodplain — Okhla to Badarpur',
-        type: 'flood', severity: 'high',
-        description: 'Low-lying Yamuna bank. Okhla Bird Sanctuary and informal settlements flood during peak monsoon.',
+        name: 'Yamuna Floodplain — Central Reach (ITO to Sarai Kale Khan)',
+        type: 'flood',
+        severity: 'high',
+        description: 'High flood hazard. Riverbed banks, Vikas Marg approach, and informal pushta settlements inundated.',
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [77.2500, 28.6000], [77.2700, 28.5980],
-          [77.2850, 28.5600], [77.2750, 28.5550],
-          [77.2560, 28.5750], [77.2420, 28.5900],
-          [77.2500, 28.6000],
+          [77.2380, 28.6500],
+          [77.2480, 28.6500],
+          [77.2640, 28.6280],
+          [77.2640, 28.5850],
+          [77.2550, 28.5750],
+          [77.2460, 28.5750],
+          [77.2420, 28.6100],
+          [77.2380, 28.6350],
+          [77.2380, 28.6500],
         ]],
       },
     },
     {
       type: 'Feature',
       properties: {
-        name: 'Yamuna Floodplain — Faridabad Bank',
-        type: 'flood', severity: 'moderate',
-        description: 'Faridabad side of Yamuna. Riverside colonies and farms flood in heavy rain years.',
+        name: 'Yamuna Southern Buffer — Okhla to Faridabad Border',
+        type: 'flood',
+        severity: 'moderate',
+        description: 'Moderate inundation along Okhla Barrage and northern Faridabad canal basin.',
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [77.2750, 28.5700], [77.3050, 28.5700],
-          [77.3150, 28.4600], [77.3050, 28.4500],
-          [77.2850, 28.5000], [77.2700, 28.5400],
-          [77.2750, 28.5700],
+          [77.2460, 28.5750],
+          [77.2550, 28.5750],
+          [77.2800, 28.5450],
+          [77.2900, 28.4900],
+          [77.2780, 28.4800],
+          [77.2650, 28.5200],
+          [77.2500, 28.5550],
+          [77.2460, 28.5750],
         ]],
       },
     },
     {
       type: 'Feature',
       properties: {
-        name: 'Hindon River Flood Zone — Ghaziabad',
-        type: 'flood', severity: 'moderate',
-        description: 'Hindon floods lower-lying Ghaziabad colonies in heavy monsoon years.',
+        name: 'Hindon River Basin — Ghaziabad',
+        type: 'flood',
+        severity: 'moderate',
+        description: 'Seasonal waterlogging and drainage swell along Hindon riverbed in western Ghaziabad.',
       },
       geometry: {
         type: 'Polygon',
         coordinates: [[
-          [77.3900, 28.6900], [77.4300, 28.6900],
-          [77.4400, 28.6300], [77.4200, 28.6200],
-          [77.3950, 28.6500], [77.3850, 28.6700],
-          [77.3900, 28.6900],
+          [77.3850, 28.7100],
+          [77.4200, 28.7050],
+          [77.4320, 28.6350],
+          [77.4120, 28.6300],
+          [77.3950, 28.6650],
+          [77.3850, 28.7100],
+        ]],
+      },
+    },
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SAFE ZONES (High elevation, strictly separated from flood zones)
+// GeoJSON [lng, lat]
+// ─────────────────────────────────────────────────────────────────────────────
+export const NCR_SAFE_ZONES_GEOJSON: GeoJSON.FeatureCollection = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: {
+        name: 'Central Vista & Lutyens High Ground',
+        type: 'safe_zone',
+        capacity: 25000,
+        description: 'Elevated central plateau with zero flood risk. Designated primary coordination and government relief zone.',
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [77.1950, 28.6250],
+          [77.2280, 28.6250],
+          [77.2280, 28.6020],
+          [77.1950, 28.6020],
+          [77.1950, 28.6250],
+        ]],
+      },
+    },
+    {
+      type: 'Feature',
+      properties: {
+        name: 'Talkatora & Central Ridge Safe Haven',
+        type: 'safe_zone',
+        capacity: 18000,
+        description: 'High rocky ridge elevation. Mass assembly shelter, indoor stadium, and logistical distribution point.',
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [77.1650, 28.6380],
+          [77.1920, 28.6380],
+          [77.1920, 28.6100],
+          [77.1650, 28.6100],
+          [77.1650, 28.6380],
+        ]],
+      },
+    },
+    {
+      type: 'Feature',
+      properties: {
+        name: 'East Delhi High Ground Haven (Mayur Vihar & Patparganj)',
+        type: 'safe_zone',
+        capacity: 14000,
+        description: 'Elevated urban sectors east of the pushta embankment. Secure assembly and medical relief sanctuary.',
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [77.2880, 28.6280],
+          [77.3150, 28.6280],
+          [77.3150, 28.6050],
+          [77.2880, 28.6050],
+          [77.2880, 28.6280],
+        ]],
+      },
+    },
+    {
+      type: 'Feature',
+      properties: {
+        name: 'Surajkund Aravalli High Ground (Faridabad)',
+        type: 'safe_zone',
+        capacity: 15000,
+        description: 'Aravalli rocky ridge terrain completely elevated above Yamuna floodplain. Clear south evacuation destination.',
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [77.2700, 28.4800],
+          [77.2980, 28.4800],
+          [77.2980, 28.4600],
+          [77.2700, 28.4600],
+          [77.2700, 28.4800],
         ]],
       },
     },
@@ -722,43 +827,313 @@ export const NCR_FAMOUS_POIS: FamousPoi[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EMERGENCY FACILITIES & RISK MARKERS (Delhi NCR)
+// [lat, lng] — Leaflet order, real-world accurate coordinates
+// ─────────────────────────────────────────────────────────────────────────────
+import type { EmergencyLocation, SearchEntry } from './joshimath-map-data';
+export type { EmergencyLocation, SearchEntry };
+
+export const NCR_EMERGENCY_SHELTERS: EmergencyLocation[] = [
+  {
+    id: 'ncr-shelter-01',
+    type: 'shelter',
+    name: 'Rajkiya Sarvodaya Bal Vidyalaya, Mayur Vihar',
+    coords: [28.6088, 77.2960],
+    capacity: 450,
+    occupied: 280,
+    status: 'open',
+    phone: '011-2275-1234',
+    details: 'Primary East Delhi government relief camp. Elevated campus, hot meals by ISKCON, medical triage & family cots.',
+    amenities: ['Hot meals (ISKCON)', 'Doctor on-site', 'Clean water', 'Cots & bedding', 'Child care', 'Pet friendly'],
+  },
+  {
+    id: 'ncr-shelter-02',
+    type: 'shelter',
+    name: 'Talkatora Indoor Stadium Mega Shelter',
+    coords: [28.6235, 77.1932],
+    capacity: 800,
+    occupied: 620,
+    status: 'open',
+    phone: '011-2309-8812',
+    details: 'Central Delhi elevated indoor arena. 24/7 power backup, medical triage post, generator charging stations.',
+    amenities: ['24/7 Power', 'Large capacity', 'Medical staff', 'Charging station', 'Family dorms', 'Restrooms'],
+  },
+  {
+    id: 'ncr-shelter-03',
+    type: 'shelter',
+    name: 'Chhatrasal Stadium Evacuation Base',
+    coords: [28.7076, 77.1852],
+    capacity: 1000,
+    occupied: 430,
+    status: 'open',
+    phone: '011-2742-5501',
+    details: 'North Delhi evacuation depot. Food distribution hub, ambulance staging, sanitation blocks & bedding.',
+    amenities: ['Ambulance station', 'Food pantry', 'Sanitation', 'Showers', 'Pet friendly'],
+  },
+  {
+    id: 'ncr-shelter-04',
+    type: 'shelter',
+    name: 'Akshardham Elevated Grounds Relief Base',
+    coords: [28.6145, 77.2810],
+    capacity: 500,
+    occupied: 310,
+    status: 'open',
+    phone: '011-4344-2344',
+    details: 'High-plinth concrete plaza 15m above river level. Secure assembly point for East Delhi riverbank evacuees.',
+    amenities: ['Elevated dry ground', 'Drinking water', 'Dry food rations', 'First aid post'],
+  },
+  {
+    id: 'ncr-shelter-05',
+    type: 'shelter',
+    name: 'BK Govt College Shelter, Faridabad',
+    coords: [28.4093, 77.3080],
+    capacity: 400,
+    occupied: 175,
+    status: 'open',
+    phone: '0129-222-0011',
+    details: 'District administration shelter for Old Faridabad and Kabulpur riverside evacuees.',
+    amenities: ['District admin staff', 'Community kitchen', 'First aid', 'Bedding'],
+  },
+  {
+    id: 'ncr-shelter-06',
+    type: 'shelter',
+    name: 'Sector 14 Community Relief Hall, Faridabad',
+    coords: [28.4180, 77.3210],
+    capacity: 250,
+    occupied: 90,
+    status: 'open',
+    phone: '0129-228-4422',
+    details: 'Equipped municipal hall with safe drinking water, generator power, Red Cross volunteers.',
+    amenities: ['Generator power', 'Red Cross staff', 'Baby supplies', 'Clean water'],
+  },
+];
+
+export const NCR_HOSPITALS: EmergencyLocation[] = [
+  {
+    id: 'ncr-hosp-01',
+    type: 'hospital',
+    name: 'AIIMS Apex Trauma Centre',
+    coords: [28.5672, 77.2100],
+    status: 'open',
+    phone: '011-2659-4404',
+    details: 'All India Institute of Medical Sciences. Premier 24/7 trauma care, emergency surgical theatres, blood bank.',
+    amenities: ['Level 1 Trauma', 'ICU (80 beds)', 'Blood bank', 'Dialysis', 'Helipad', 'Ambulance fleet'],
+  },
+  {
+    id: 'ncr-hosp-02',
+    type: 'hospital',
+    name: 'Safdarjung Emergency & Burns Care',
+    coords: [28.5691, 77.2058],
+    status: 'open',
+    phone: '011-2673-0000',
+    details: 'Major government disaster reception facility. Specialized trauma and burns ward, 24/7 emergency surgeries.',
+    amenities: ['Burns ICU', '24/7 Emergency', 'Ambulance fleet', 'Trauma ward', 'Oxygen plant'],
+  },
+  {
+    id: 'ncr-hosp-03',
+    type: 'hospital',
+    name: 'LNJP Hospital (Lok Nayak Jai Prakash)',
+    coords: [28.6360, 77.2470],
+    status: 'limited',
+    phone: '011-2323-1740',
+    details: 'Central Delhi government hospital. Serving Old Delhi, Kashmere Gate, and Yamuna bank evacuees.',
+    amenities: ['Disaster ward', 'Emergency surgery', 'Pediatric care', 'Ambulances'],
+  },
+  {
+    id: 'ncr-hosp-04',
+    type: 'hospital',
+    name: 'GTB Hospital (Guru Teg Bahadur)',
+    coords: [28.6835, 77.3090],
+    status: 'open',
+    phone: '011-2259-1669',
+    details: 'Premier hospital for East and North-East Delhi. Fully operational emergency and mass casualty unit.',
+    amenities: ['Mass casualty unit', 'Trauma team', 'Blood bank', 'Oxygen plant'],
+  },
+  {
+    id: 'ncr-hosp-05',
+    type: 'hospital',
+    name: 'Max Super Speciality Hospital Patparganj',
+    coords: [28.6280, 77.3030],
+    status: 'open',
+    phone: '011-2212-1111',
+    details: 'Major hospital on East Delhi ridge. Dedicated critical care and cardiac response.',
+    amenities: ['Cardiac care', 'ICU', 'Advanced diagnostics', 'Private emergency'],
+  },
+  {
+    id: 'ncr-hosp-06',
+    type: 'hospital',
+    name: 'BK District Hospital Faridabad',
+    coords: [28.4090, 77.3085],
+    status: 'open',
+    phone: '0129-222-0000',
+    details: 'District civil hospital for Faridabad. 24/7 emergency trauma, ambulance base.',
+    amenities: ['Emergency trauma', 'Ambulances', 'Pharmacy', 'ICU'],
+  },
+];
+
+export const NCR_EMERGENCY_RESPONSE: EmergencyLocation[] = [
+  {
+    id: 'ncr-resp-01',
+    type: 'response',
+    name: 'NDRF Flood Rescue Command — Yamuna Barrage (ITO)',
+    coords: [28.6310, 77.2485],
+    status: 'open',
+    phone: '011-2436-3260',
+    details: 'National Disaster Response Force tactical operations HQ. Inflatable motorized boats (IRBs), deep divers, drone reconnaissance.',
+    amenities: ['Inflatable boats (12)', 'Deep divers', 'Drone recon', 'Satellite comms', 'Flood barriers'],
+  },
+  {
+    id: 'ncr-resp-02',
+    type: 'response',
+    name: 'Boat Rescue Operations Post — Nigambodh / Kashmere Gate',
+    coords: [28.6680, 77.2340],
+    status: 'open',
+    phone: '011-2296-8836',
+    details: 'Rapid boat evacuation staging post. Evacuating stranded families from Monastery Market and Yamuna Bazar.',
+    amenities: ['Rescue boats (6)', 'Life jackets', 'Paramedics', 'Stretcher teams'],
+  },
+  {
+    id: 'ncr-resp-03',
+    type: 'response',
+    name: 'Delhi Fire & Heavy Pumping Post — Connaught Place',
+    coords: [28.6320, 77.2190],
+    status: 'open',
+    phone: '101',
+    details: 'Heavy dewatering pumps, high-clearance rescue trucks, flood barriers.',
+    amenities: ['High-capacity pumps', 'Heavy rescue vehicles', 'Hazmat unit'],
+  },
+  {
+    id: 'ncr-resp-04',
+    type: 'response',
+    name: 'Civil Defence & SDRF Rescue Post — Mayur Vihar',
+    coords: [28.6060, 77.2920],
+    status: 'open',
+    phone: '011-2275-5555',
+    details: 'First responder command for East Delhi Pushta road and Mayur Vihar floodplains.',
+    amenities: ['First aid squad', '4WD transports', 'Rations staging'],
+  },
+  {
+    id: 'ncr-resp-05',
+    type: 'response',
+    name: 'Faridabad District Disaster Control Room',
+    coords: [28.4096, 77.3154],
+    status: 'open',
+    phone: '0129-222-8801',
+    details: 'Mini Secretariat district control hub. Coordinates Yamuna embankment patrols and Kabulpur evacuations.',
+    amenities: ['VHF radio grid', 'Emergency helpline', 'Ambulance dispatch'],
+  },
+];
+
+export const NCR_DISASTER_MARKERS: EmergencyLocation[] = [
+  {
+    id: 'ncr-risk-01',
+    type: 'risk',
+    name: 'Yamuna Bazar & Ring Road Inundation',
+    coords: [28.6590, 77.2420],
+    status: 'danger',
+    phone: '1077',
+    details: 'Critical river overflow. Ring road submerged under 4–5 ft water near Red Fort back wall. Roads impassable.',
+    amenities: [],
+  },
+  {
+    id: 'ncr-risk-02',
+    type: 'risk',
+    name: 'Monastery Market Submerged Ward',
+    coords: [28.6720, 77.2310],
+    status: 'danger',
+    phone: '1077',
+    details: 'Severe flood breach. Ground floors completely flooded. Boat-only access.',
+    amenities: [],
+  },
+  {
+    id: 'ncr-risk-03',
+    type: 'risk',
+    name: 'ITO Drain Regulator #12 Backflow Point',
+    coords: [28.6295, 77.2460],
+    status: 'danger',
+    phone: '1077',
+    details: 'Regulator compromised causing Yamuna backflow onto Vikas Marg and ITO crossing.',
+    amenities: [],
+  },
+  {
+    id: 'ncr-risk-04',
+    type: 'risk',
+    name: 'Geeta Colony Embankment Seepage Risk',
+    coords: [28.6480, 77.2680],
+    status: 'warning',
+    phone: '1077',
+    details: 'Pushta road embankment showing erosion under high water pressure. Heavy vehicle traffic diverted.',
+    amenities: [],
+  },
+  {
+    id: 'ncr-risk-05',
+    type: 'risk',
+    name: 'Okhla Bird Sanctuary Low-Lying Riverside Inundation',
+    coords: [28.5410, 77.3020],
+    status: 'warning',
+    phone: '1077',
+    details: 'Kalindi Kunj bypass flooded. Informal settlement evacuation underway.',
+    amenities: [],
+  },
+  {
+    id: 'ncr-risk-06',
+    type: 'risk',
+    name: 'Kabulpur / Tilpat Low Drain Overflow',
+    coords: [28.4120, 77.3180],
+    status: 'warning',
+    phone: '1077',
+    details: 'Faridabad drainage back-up causing road waterlogging up to 2 ft.',
+    amenities: [],
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SEARCH INDEX — offline search entries for NCR
 // [lat, lng] — Leaflet order
 // ─────────────────────────────────────────────────────────────────────────────
-import type { SearchEntry } from './joshimath-map-data';
-export type { SearchEntry };
-
 export const NCR_SEARCH_INDEX: SearchEntry[] = [
-  // Cities
-  { id:'ncr-delhi',       name:'New Delhi',          type:'safe_zone', coords:[28.6139, 77.2090] },
-  { id:'ncr-faridabad',   name:'Faridabad',          type:'safe_zone', coords:[28.4089, 77.3178] },
-  { id:'ncr-noida',       name:'Noida',              type:'safe_zone', coords:[28.5355, 77.3910] },
-  { id:'ncr-gurgaon',     name:'Gurugram (Gurgaon)', type:'safe_zone', coords:[28.4595, 77.0266] },
-  { id:'ncr-ghaziabad',   name:'Ghaziabad',          type:'safe_zone', coords:[28.6692, 77.4538] },
-  { id:'ncr-greaternoida',name:'Greater Noida',      type:'safe_zone', coords:[28.4744, 77.5040] },
-  // Faridabad/Kabulpur area
-  { id:'ncr-kabulpur',    name:'Kabulpur / Kaboolpur', type:'safe_zone', coords:[28.4080, 77.3120] },
-  { id:'ncr-ballabhgarh', name:'Ballabhgarh',         type:'safe_zone', coords:[28.3406, 77.3194] },
-  { id:'ncr-nit',         name:'NIT Faridabad',       type:'safe_zone', coords:[28.3907, 77.3176] },
-  { id:'ncr-neharpar',    name:'Neharpar Faridabad',  type:'safe_zone', coords:[28.3780, 77.3420] },
+  // Shelters
+  { id: 'ncr-shelter-01', name: 'Rajkiya Sarvodaya Relief Camp, Mayur Vihar', type: 'shelter', coords: [28.6088, 77.2960] },
+  { id: 'ncr-shelter-02', name: 'Talkatora Indoor Stadium Mega Shelter', type: 'shelter', coords: [28.6235, 77.1932] },
+  { id: 'ncr-shelter-03', name: 'Chhatrasal Stadium Evacuation Base', type: 'shelter', coords: [28.7076, 77.1852] },
+  { id: 'ncr-shelter-04', name: 'Akshardham Elevated Grounds Relief Base', type: 'shelter', coords: [28.6145, 77.2810] },
+  { id: 'ncr-shelter-05', name: 'BK Govt College Shelter, Faridabad', type: 'shelter', coords: [28.4093, 77.3080] },
+  { id: 'ncr-shelter-06', name: 'Sector 14 Community Relief Hall, Faridabad', type: 'shelter', coords: [28.4180, 77.3210] },
+
   // Hospitals
-  { id:'poi-ncr-aiims',       name:'AIIMS New Delhi',         type:'hospital', coords:[28.5672, 77.2100] },
-  { id:'poi-ncr-bk-hosp',     name:'BK Hospital Faridabad',   type:'hospital', coords:[28.4093, 77.3080] },
-  { id:'poi-ncr-esic',        name:'ESIC Hospital Faridabad',  type:'hospital', coords:[28.4260, 77.3020] },
-  { id:'poi-ncr-lnjp',        name:'LNJP Hospital Delhi',     type:'hospital', coords:[28.6360, 77.2470] },
-  { id:'poi-ncr-safdarjung',  name:'Safdarjung Hospital',     type:'hospital', coords:[28.5691, 77.2058] },
-  // Response
-  { id:'poi-ncr-isbt-kashmere', name:'ISBT Kashmere Gate',    type:'response', coords:[28.6682, 77.2302] },
-  { id:'poi-ncr-isbt-anand',    name:'ISBT Anand Vihar',      type:'response', coords:[28.6469, 77.3165] },
-  { id:'poi-ncr-faridabad-rly', name:'Faridabad Railway Station', type:'response', coords:[28.4075, 77.3121] },
-  { id:'poi-ncr-new-delhi-rly', name:'New Delhi Railway Station', type:'response', coords:[28.6414, 77.2196] },
-  { id:'poi-ncr-igi',           name:'IGI Airport New Delhi',  type:'response', coords:[28.5562, 77.1000] },
-  // Government
-  { id:'poi-ncr-dc-faridabad',  name:'DC Office Faridabad',   type:'shelter', coords:[28.4096, 77.3154] },
-  { id:'poi-ncr-parliament',    name:'Parliament House',       type:'shelter', coords:[28.6171, 77.2088] },
-  // Landmarks
-  { id:'poi-ncr-redfort',       name:'Red Fort Delhi',         type:'risk',    coords:[28.6562, 77.2410] },
-  { id:'poi-ncr-indiagate',     name:'India Gate',             type:'risk',    coords:[28.6129, 77.2295] },
-  { id:'poi-ncr-akshardham',    name:'Akshardham Temple',      type:'risk',    coords:[28.6127, 77.2773] },
-  { id:'poi-ncr-surajkund',     name:'Surajkund Faridabad',    type:'risk',    coords:[28.4870, 77.2880] },
+  { id: 'ncr-hosp-01', name: 'AIIMS Apex Trauma Centre', type: 'hospital', coords: [28.5672, 77.2100] },
+  { id: 'ncr-hosp-02', name: 'Safdarjung Emergency & Burns Care', type: 'hospital', coords: [28.5691, 77.2058] },
+  { id: 'ncr-hosp-03', name: 'LNJP Hospital (Lok Nayak Jai Prakash)', type: 'hospital', coords: [28.6360, 77.2470] },
+  { id: 'ncr-hosp-04', name: 'GTB Hospital (Guru Teg Bahadur)', type: 'hospital', coords: [28.6835, 77.3090] },
+  { id: 'ncr-hosp-05', name: 'Max Super Speciality Hospital Patparganj', type: 'hospital', coords: [28.6280, 77.3030] },
+  { id: 'ncr-hosp-06', name: 'BK District Hospital Faridabad', type: 'hospital', coords: [28.4090, 77.3085] },
+
+  // Response Posts
+  { id: 'ncr-resp-01', name: 'NDRF Flood Rescue Command — Yamuna Barrage (ITO)', type: 'response', coords: [28.6310, 77.2485] },
+  { id: 'ncr-resp-02', name: 'Boat Rescue Operations Post — Nigambodh / Kashmere Gate', type: 'response', coords: [28.6680, 77.2340] },
+  { id: 'ncr-resp-03', name: 'Delhi Fire & Heavy Pumping Post — Connaught Place', type: 'response', coords: [28.6320, 77.2190] },
+  { id: 'ncr-resp-04', name: 'Civil Defence & SDRF Rescue Post — Mayur Vihar', type: 'response', coords: [28.6060, 77.2920] },
+  { id: 'ncr-resp-05', name: 'Faridabad District Disaster Control Room', type: 'response', coords: [28.4096, 77.3154] },
+
+  // Risk Markers
+  { id: 'ncr-risk-01', name: 'Yamuna Bazar & Ring Road Inundation', type: 'risk', coords: [28.6590, 77.2420] },
+  { id: 'ncr-risk-02', name: 'Monastery Market Submerged Ward', type: 'risk', coords: [28.6720, 77.2310] },
+  { id: 'ncr-risk-03', name: 'ITO Drain Regulator #12 Backflow Point', type: 'risk', coords: [28.6295, 77.2460] },
+  { id: 'ncr-risk-04', name: 'Geeta Colony Embankment Seepage Risk', type: 'risk', coords: [28.6480, 77.2680] },
+  { id: 'ncr-risk-05', name: 'Okhla Bird Sanctuary Inundation', type: 'risk', coords: [28.5410, 77.3020] },
+  { id: 'ncr-risk-06', name: 'Kabulpur / Tilpat Low Drain Overflow', type: 'risk', coords: [28.4120, 77.3180] },
+
+  // Safe Zones
+  { id: 'ncr-safe-01', name: 'Central Vista & Lutyens High Ground', type: 'safe_zone', coords: [28.6139, 77.2090] },
+  { id: 'ncr-safe-02', name: 'Talkatora & Central Ridge Safe Haven', type: 'safe_zone', coords: [28.6235, 77.1932] },
+  { id: 'ncr-safe-03', name: 'East Delhi High Ground Haven (Mayur Vihar & Patparganj)', type: 'safe_zone', coords: [28.6145, 77.2980] },
+  { id: 'ncr-safe-04', name: 'Surajkund Aravalli High Ground', type: 'safe_zone', coords: [28.4700, 77.2840] },
+
+  // Key Districts
+  { id: 'ncr-delhi', name: 'New Delhi', type: 'safe_zone', coords: [28.6139, 77.2090] },
+  { id: 'ncr-faridabad', name: 'Faridabad', type: 'safe_zone', coords: [28.4089, 77.3178] },
+  { id: 'ncr-noida', name: 'Noida', type: 'safe_zone', coords: [28.5355, 77.3910] },
+  { id: 'ncr-gurgaon', name: 'Gurugram (Gurgaon)', type: 'safe_zone', coords: [28.4595, 77.0266] },
+  { id: 'ncr-ghaziabad', name: 'Ghaziabad', type: 'safe_zone', coords: [28.6692, 77.4538] },
+  { id: 'ncr-kabulpur', name: 'Kabulpur / Kaboolpur', type: 'safe_zone', coords: [28.4080, 77.3120] },
 ];
