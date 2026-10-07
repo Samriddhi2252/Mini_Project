@@ -182,3 +182,169 @@ export const FILTER_TABS: { id: FilterCategory; label: string }[] = [
   { id: 'shelter', label: 'Shelter Beds' },
   { id: 'volunteers', label: 'Volunteers Needed' },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NGO MANAGEMENT SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Status of a rescue task in the lifecycle */
+export type RescueTaskStatus =
+  | 'AVAILABLE'
+  | 'ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'AWAITING_CONFIRMATION'
+  | 'RESCUED'
+  | 'CANCELLED';
+
+/** Availability status of a volunteer member */
+export type VolunteerMemberStatus = 'AVAILABLE' | 'ON_MISSION' | 'OFFLINE';
+
+/** Verification status of an NGO */
+export type NgoVerificationStatus = 'PENDING' | 'VERIFIED' | 'SUSPENDED';
+
+/** An NGO (Non-Governmental Organization) registered in ResQLink */
+export interface NgoProfile {
+  id: string;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  serviceArea: string;
+  description: string;
+  verificationStatus: NgoVerificationStatus;
+  passwordHash: string; // simple bcrypt-free hash for local demo
+  createdAt: number;
+}
+
+/** Input type for NGO registration */
+export interface NgoRegistrationInput {
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  serviceArea: string;
+  description: string;
+  password: string;
+}
+
+/** A volunteer who belongs to an NGO */
+export interface VolunteerMember {
+  id: string;
+  ngoId: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  skills: string[];
+  status: VolunteerMemberStatus;
+  currentTaskId: string | null;
+  joinedAt: number;
+}
+
+/** Input type for adding a volunteer to an NGO */
+export interface VolunteerMemberInput {
+  ngoId: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  skills: string[];
+}
+
+/** A rescue task linking an AidRequest to an NGO volunteer assignment */
+export interface RescueTask {
+  id: string;
+  /** The original AidRequest this task was created from */
+  requestId: string;
+  /** Snapshot of request details for display */
+  title: string;
+  description: string;
+  category: RequestCategory;
+  priority: RequestPriority;
+  location: string;
+  coords: { x: number; y: number };
+  peopleCount: number;
+  contactName: string;
+  contactPhone: string;
+  region: string;
+  /** Assignment & lifecycle */
+  status: RescueTaskStatus;
+  assignedNgoId: string | null;
+  assignedNgoName: string | null;
+  assignedVolunteerId: string | null;
+  assignedVolunteerName: string | null;
+  /** Timestamps */
+  createdAt: number;
+  assignedAt: number | null;
+  startedAt: number | null;
+  completionRequestedAt: number | null;
+  confirmedAt: number | null;
+  completedAt: number | null;
+  /** Confirmation metadata */
+  confirmedByNgoId: string | null;
+  confirmedByName: string | null;
+  /** Cancellation */
+  cancelledAt: number | null;
+  cancelReason: string | null;
+}
+
+/** Input for creating a rescue task from an AidRequest */
+export interface RescueTaskCreateInput {
+  requestId: string;
+  title: string;
+  description: string;
+  category: RequestCategory;
+  priority: RequestPriority;
+  location: string;
+  coords: { x: number; y: number };
+  peopleCount: number;
+  contactName: string;
+  contactPhone: string;
+  region: string;
+}
+
+/** Response from the atomic task assignment endpoint */
+export interface TaskAssignmentResponse {
+  ok: boolean;
+  task?: RescueTask;
+  error?: string;
+  alreadyAssigned?: boolean;
+}
+
+/** The NGO data store persisted on server */
+export interface NgoStore {
+  ngos: NgoProfile[];
+  volunteers: VolunteerMember[];
+  tasks: RescueTask[];
+  version: number;
+}
+
+/** Stats computed for the NGO dashboard overview */
+export interface NgoDashboardStats {
+  totalVolunteers: number;
+  availableVolunteers: number;
+  onMissionVolunteers: number;
+  offlineVolunteers: number;
+  activeRescues: number;
+  completedRescues: number;
+  awaitingConfirmation: number;
+}
+
+export const RESCUE_TASK_STATUS_META: Record<
+  RescueTaskStatus,
+  { label: string; color: string; bg: string; text: string; emoji: string }
+> = {
+  AVAILABLE:             { label: 'Available',              color: 'success',  bg: 'bg-success/15',  text: 'text-success',  emoji: '🟢' },
+  ASSIGNED:              { label: 'Assigned',               color: 'info',     bg: 'bg-info/15',     text: 'text-info',     emoji: '🔵' },
+  IN_PROGRESS:           { label: 'In Progress',            color: 'warning',  bg: 'bg-warning/15',  text: 'text-warning',  emoji: '🟠' },
+  AWAITING_CONFIRMATION: { label: 'Awaiting Confirmation',  color: 'warning',  bg: 'bg-yellow-500/15', text: 'text-yellow-600 dark:text-yellow-400', emoji: '🟡' },
+  RESCUED:               { label: 'Rescued',                color: 'success',  bg: 'bg-success/15',  text: 'text-success',  emoji: '✅' },
+  CANCELLED:             { label: 'Cancelled',              color: 'alert',    bg: 'bg-alert/15',    text: 'text-alert',    emoji: '🔴' },
+};
+
+export const VOLUNTEER_MEMBER_STATUS_META: Record<
+  VolunteerMemberStatus,
+  { label: string; bg: string; text: string; dot: string }
+> = {
+  AVAILABLE:   { label: 'Available',   bg: 'bg-success/15',  text: 'text-success',  dot: 'bg-success' },
+  ON_MISSION:  { label: 'On Mission',  bg: 'bg-warning/15',  text: 'text-warning',  dot: 'bg-warning' },
+  OFFLINE:     { label: 'Offline',     bg: 'bg-muted/50',    text: 'text-muted-foreground', dot: 'bg-muted-foreground' },
+};

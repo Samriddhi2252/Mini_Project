@@ -1,7 +1,7 @@
 import {
   Siren, Building2, Wifi, WifiOff, Power, Search,
   BadgeCheck, Menu, Sun, Moon, Brain, ShieldAlert,
-  ChevronDown,
+  ChevronDown, Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -26,13 +26,20 @@ interface TopNavProps {
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
   onTriage?: () => void;
+  /** NGO Portal button */
+  onNgoPortal?: () => void;
+  ngoLoggedIn?: boolean;
+  volunteerLoggedIn?: boolean;
+  ngoName?: string;
 }
 
 export function TopNav({
   status, onToggleNetwork, onSos, onShelter,
   onFindHelp, onOfferHelp, theme, onToggleTheme, onTriage,
+  onNgoPortal, ngoLoggedIn, volunteerLoggedIn, ngoName,
 }: TopNavProps) {
   const isOnline = status === 'online';
+  const isNgoActive = ngoLoggedIn || volunteerLoggedIn;
 
   return (
     <header className="sticky top-0 z-40 w-full">
@@ -151,6 +158,18 @@ export function TopNav({
                   className="border-warning/25 bg-warning/[8%] hover:bg-warning/15 text-foreground"
                 />
               )}
+              {onNgoPortal && (
+                <NavButton
+                  onClick={onNgoPortal}
+                  icon={<Users className={cn('h-3.5 w-3.5', isNgoActive ? 'text-primary' : 'text-muted-foreground')} />}
+                  label={isNgoActive ? (ngoName ? ngoName.split(' ')[0] : 'NGO') : 'NGO Portal'}
+                  className={cn(
+                    isNgoActive
+                      ? 'border-primary/30 bg-primary/[8%] hover:bg-primary/15 text-primary'
+                      : 'border-border bg-secondary/30 hover:bg-secondary text-foreground',
+                  )}
+                />
+              )}
               <NavButton
                 onClick={onShelter}
                 icon={<Building2 className="h-3.5 w-3.5 text-info" />}
@@ -230,6 +249,13 @@ export function TopNav({
                       onClick={onTriage}
                       icon={<Brain className="h-4 w-4 text-warning" />}
                       label="AI Emergency Triage"
+                    />
+                  )}
+                  {onNgoPortal && (
+                    <MobileMenuItem
+                      onClick={onNgoPortal}
+                      icon={<Users className={cn('h-4 w-4', isNgoActive ? 'text-primary' : 'text-muted-foreground')} />}
+                      label={isNgoActive ? `NGO Portal${ngoName ? ` — ${ngoName.split(' ')[0]}` : ''}` : 'NGO / Volunteer Portal'}
                     />
                   )}
                   <MobileMenuItem

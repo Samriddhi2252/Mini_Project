@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { TopNav } from '@/components/top-nav';
 import { StatusBanner } from '@/components/status-banner';
 import { MapView } from '@/components/map-view';
@@ -28,6 +28,18 @@ import type { NavDestination } from '@/hooks/use-navigation';
 
 import { useCrossDeviceSync } from '@/hooks/use-cross-device-sync';
 
+// ── NGO / Rescue Management imports ──────────────────────────────────────────
+import { NgoLoginModal }             from '@/components/ngo-login-modal';
+import { NgoDashboard }              from '@/components/ngo-dashboard';
+import { VolunteerRescueDashboard }  from '@/components/volunteer-rescue-dashboard';
+import {
+  getNgoSession,
+  getVolunteerSession,
+  clearNgoSession,
+  clearVolunteerSession,
+} from '@/lib/ngo-auth';
+import type { NgoProfile, VolunteerMember } from '@/types';
+
 function App() {
   const { status, toggle, isOnline } = useNetwork();
   const { queue, enqueue, clearQueue, removeFromQueue, queueCount } = useOfflineQueue(isOnline);
@@ -45,6 +57,63 @@ function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileTab, setMobileTab]   = useState<MobileTab>('map');
   const [navDest, setNavDest]       = useState<NavDestination | null>(null);
+
+  // ── NGO / Rescue Management state ─────────────────────────────────────────
+  const [ngoLoginOpen,        setNgoLoginOpen]        = useState(false);
+  const [ngoDashOpen,         setNgoDashOpen]         = useState(false);
+  const [volunteerDashOpen,   setVolunteerDashOpen]   = useState(false);
+  const [ngoSession,          setNgoSessionState]     = useState<Omit<NgoProfile, 'passwordHash'> | null>(
+    () => getNgoSession()?.ngo ?? null
+  );
+  const [volunteerSession,    setVolunteerSessionState] = useState<{
+    volunteer: VolunteerMember; ngoId: string; ngoName: string;
+  } | null>(() => {
+    const s = getVolunteerSession();
+    return s ? { volunteer: s.volunteer, ngoId: s.ngoId, ngoName: s.ngoName } : null;
+  });
+
+  // Sync session state when localStorage changes (e.g. after login in modal)
+  function refreshSessionState() {
+    const ngo = getNgoSession();
+    const vol = getVolunteerSession();
+    setNgoSessionState(ngo?.ngo ?? null);
+    setVolunteerSessionState(vol ? { volunteer: vol.volunteer, ngoId: vol.ngoId, ngoName: vol.ngoName } : null);
+  }
+
+  function handleNgoLoggedIn() {
+    refreshSessionState();
+    setNgoDashOpen(true);
+    toast.success('NGO logged in', { description: 'Welcome to your NGO dashboard.' });
+  }
+
+  function handleVolunteerLoggedIn() {
+    refreshSessionState();
+    setVolunteerDashOpen(true);
+    toast.success('Volunteer logged in', { description: 'View available rescue requests.' });
+  }
+
+  function handleNgoLogout() {
+    clearNgoSession();
+    refreshSessionState();
+    toast('NGO session ended.');
+  }
+
+  function handleVolunteerLogout() {
+    clearVolunteerSession();
+    refreshSessionState();
+    toast('Volunteer session ended.');
+  }
+
+  /** Open the right dashboard, or the login modal if not logged in */
+  function openNgoOrLogin(defaultTab?: 'login' | 'register' | 'volunteer') {
+    if (ngoSession) {
+      setNgoDashOpen(true);
+    } else if (volunteerSession) {
+      setVolunteerDashOpen(true);
+    } else {
+      setNgoLoginOpen(true);
+    }
+  }
 
   // ── Shared Real-Time Cross-Device Sync State (Laptop + Mobile + Cloud) ────
   const {
@@ -201,6 +270,10 @@ function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onTriage={() => setTriageOpen(true)}
+        onNgoPortal={() => openNgoOrLogin()}
+        ngoLoggedIn={!!ngoSession}
+        volunteerLoggedIn={!!volunteerSession}
+        ngoName={ngoSession?.name ?? volunteerSession?.ngoName}
       />
 
       <StatusBanner
@@ -474,6 +547,34 @@ function App() {
       />
 
       <div className="h-20 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden" />
+      {/* ── NGO / Rescue Management ───────────────────────────────────────── */}
+      <NgoLoginModal
+        open={ngoLoginOpen}
+        onOpenChange={setNgoLoginOpen}
+        onNgoLoggedIn={handleNgoLoggedIn}
+        onVolunteerLoggedIn={handleVolunteerLoggedIn}
+      />
+
+      {ngoSession && (
+        <NgoDashboard
+          open={ngoDashOpen}
+          onOpenChange={setNgoDashOpen}
+          ngo={ngoSession}
+          onLogout={handleNgoLogout}
+        />
+      )}
+
+      {volunteerSession && (
+        <VolunteerRescueDashboard
+          open={volunteerDashOpen}
+          onOpenChange={setVolunteerDashOpen}
+          volunteer={volunteerSession.volunteer}
+          ngoId={volunteerSession.ngoId}
+          ngoName={volunteerSession.ngoName}
+          onLogout={handleVolunteerLogout}
+        />
+      )}
+
       <Toaster />
     </div>
   );
