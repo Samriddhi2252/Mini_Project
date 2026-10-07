@@ -322,12 +322,12 @@ export function MapView({ requests, isOnline, selectedId, onSelect, region, them
     const stadiaApiKey = import.meta.env.VITE_STADIA_API_KEY as string | undefined;
     const tileUrl = stadiaApiKey
       ? `https://tiles.stadiamaps.com/tiles/${isLight ? 'alidade_smooth' : 'alidade_smooth_dark'}/{z}/{x}/{y}{r}.png?api_key=${encodeURIComponent(stadiaApiKey)}`
-      : `https://{s}.basemaps.cartocdn.com/${isLight ? 'light_all' : 'dark_all'}/{z}/{x}/{y}{r}.png`;
+      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
     L.tileLayer(tileUrl, {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: '',
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+      className: !isLight && !stadiaApiKey ? 'dark-tiles' : undefined,
     }).addTo(map);
 
     // Custom z-ordered panes
