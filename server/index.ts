@@ -4,8 +4,12 @@ import { GoogleGenAI } from '@google/genai';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -388,7 +392,7 @@ app.get('/api/ngo/:ngoId/volunteers', (req: Request, res: Response) => {
 
 /** POST /api/ngo/:ngoId/volunteers — add a volunteer to an NGO */
 app.post('/api/ngo/:ngoId/volunteers', (req: Request, res: Response) => {
-  const ngoId = req.params.ngoId;
+  const ngoId = Array.isArray(req.params.ngoId) ? req.params.ngoId[0] : String(req.params.ngoId ?? '');
   const ngo   = ngoStore.ngos.find((n) => n.id === ngoId);
   if (!ngo) { res.status(404).json({ error: 'NGO not found.' }); return; }
 
@@ -1078,13 +1082,17 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: message });
 });
 
-app.listen(PORT, () => {
-  console.log(`[ResQLink API] Running on http://localhost:${PORT}`);
-  console.log(`[ResQLink API] Gemini configured: ${GEMINI_READY}`);
-  if (!GEMINI_READY) console.log('[ResQLink API] Add GEMINI_API_KEY to server/.env to enable AI responses');
-  // Bootstrap ngo-store.json on first start so it exists before any request
-  if (!fs.existsSync(NGO_FILE)) {
-    writeNgoStore(ngoStore);
-    console.log(`[ResQLink API] Created ${NGO_FILE}`);
-  }
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`[ResQLink API] Running on http://localhost:${PORT}`);
+    console.log(`[ResQLink API] Gemini configured: ${GEMINI_READY}`);
+    if (!GEMINI_READY) console.log('[ResQLink API] Add GEMINI_API_KEY to server/.env to enable AI responses');
+    // Bootstrap ngo-store.json on first start so it exists before any request
+    if (!fs.existsSync(NGO_FILE)) {
+      writeNgoStore(ngoStore);
+      console.log(`[ResQLink API] Created ${NGO_FILE}`);
+    }
+  });
+}
+
+export default app;
