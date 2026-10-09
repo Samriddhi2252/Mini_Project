@@ -10,7 +10,7 @@ The platform brings essential emergency-response information into one place thro
 
 ## 🌐 Live Demo
 
-🚀 **[Try ResQLink Live](https://resqlink-final.onrender.com/)**
+🚀 **[Try ResQLink Live](https://miniproject-lime-theta.vercel.app/)**
 
 > **Note:** The live demo is hosted on Render. The application may take a short time to load if the server is waking up.
 
